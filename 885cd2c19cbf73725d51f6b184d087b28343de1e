@@ -1,0 +1,8 @@
+Change-Id: I885cd2c19cbf73725d51f6b184d087b28343de1e
+Code-Review+2: Jean-Baptiste Queru <jbq@google.com>
+Verified+1: Jean-Baptiste Queru <jbq@google.com>
+Submitted-by: Jean-Baptiste Queru <jbq@google.com>
+Submitted-at: Wed, 18 Mar 2009 17:58:09 -0700
+Reviewed-on: https://review.source.android.com/9265
+Project: platform/external/freetype
+Branch: refs/heads/master

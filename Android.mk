@@ -47,6 +47,9 @@ LOCAL_CFLAGS += -fPIC -DPIC
 LOCAL_CFLAGS += "-DDARWIN_NO_CARBON"
 LOCAL_CFLAGS += "-DFT2_BUILD_LIBRARY"
 
+# FT_USE_MODULE doesn't conform to strict aliasing rules
+LOCAL_CFLAGS += -fno-strict-aliasing
+
 LOCAL_SHARED_LIBRARIES += libpng libz
 
 # the following is for testing only, and should not be used in final builds

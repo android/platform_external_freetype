@@ -1,0 +1,7 @@
+Code-Review+2: Raph Levien <raph@google.com>
+Verified+1: Derek Sollenberger <djsollen@google.com>
+Submitted-by: Derek Sollenberger <djsollen@google.com>
+Submitted-at: Mon, 01 Jun 2015 14:31:06 +0000
+Reviewed-on: https://android-review.googlesource.com/152373
+Project: platform/external/freetype
+Branch: refs/heads/master

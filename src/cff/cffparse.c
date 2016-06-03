@@ -709,7 +709,7 @@
 #define CFF_FIELD_CALLBACK( code, name, id ) \
           {                                  \
             cff_kind_callback,               \
-            code | CFFCODE,                  \
+            (code) | CFFCODE,                  \
             0, 0,                            \
             cff_parse_ ## name,              \
             0, 0                             \
@@ -718,7 +718,7 @@
 #define CFF_FIELD( code, name, id, kind ) \
           {                               \
             kind,                         \
-            code | CFFCODE,               \
+            (code) | CFFCODE,               \
             FT_FIELD_OFFSET( name ),      \
             FT_FIELD_SIZE( name ),        \
             0, 0, 0                       \
@@ -727,7 +727,7 @@
 #define CFF_FIELD_DELTA( code, name, max, id ) \
           {                                    \
             cff_kind_delta,                    \
-            code | CFFCODE,                    \
+            (code) | CFFCODE,                    \
             FT_FIELD_OFFSET( name ),           \
             FT_FIELD_SIZE_DELTA( name ),       \
             0,                                 \

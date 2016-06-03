@@ -370,8 +370,9 @@ typedef ptrdiff_t  FT_PtrDist;
 
   /* These macros speed up repetitive divisions by replacing them */
   /* with multiplications and right shifts.                       */ 
+  /* NOLINT, do not add parentheses around FT_UDIVPREP(b)         */
 #define FT_UDIVPREP( b )                                       \
-  long  b ## _r = (long)( FT_ULONG_MAX >> PIXEL_BITS ) / ( b )
+  long  b ## _r = (long)( FT_ULONG_MAX >> PIXEL_BITS ) / ( b ) /* NOLINT */
 #define FT_UDIV( a, b )                                        \
   ( ( (unsigned long)( a ) * (unsigned long)( b ## _r ) ) >>   \
     ( sizeof( long ) * FT_CHAR_BIT - PIXEL_BITS ) )

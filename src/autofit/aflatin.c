@@ -42,7 +42,7 @@
 
 
   /* needed for computation of round vs. flat segments */
-#define FLAT_THRESHOLD( x )  ( x / 14 )
+#define FLAT_THRESHOLD( x )  ( (x) / 14 )
 
 
   /*************************************************************************/

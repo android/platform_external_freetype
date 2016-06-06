@@ -31,30 +31,30 @@ FT_BEGIN_HEADER
 #define GET_UTF8_CHAR( ch, p )                      \
           do                                        \
           {                                         \
-            ch = (unsigned char)*p++;               \
-            if ( ch >= 0x80 )                       \
+            (ch) = (unsigned char)*(p)++;               \
+            if ( (ch) >= 0x80 )                       \
             {                                       \
               FT_UInt  len_;                        \
                                                     \
                                                     \
-              if ( ch < 0xE0 )                      \
+              if ( (ch) < 0xE0 )                      \
               {                                     \
                 len_ = 1;                           \
-                ch  &= 0x1F;                        \
+                (ch)  &= 0x1F;                        \
               }                                     \
-              else if ( ch < 0xF0 )                 \
+              else if ( (ch) < 0xF0 )                 \
               {                                     \
                 len_ = 2;                           \
-                ch  &= 0x0F;                        \
+                (ch)  &= 0x0F;                        \
               }                                     \
               else                                  \
               {                                     \
                 len_ = 3;                           \
-                ch  &= 0x07;                        \
+                (ch)  &= 0x07;                        \
               }                                     \
                                                     \
               for ( ; len_ > 0; len_-- )            \
-                ch = ( ch << 6 ) | ( *p++ & 0x3F ); \
+                (ch) = ( (ch) << 6 ) | ( *(p)++ & 0x3F ); \
             }                                       \
           } while ( 0 )
 

@@ -150,7 +150,7 @@
 
   /* We use the macro STREAM_FILE for convenience to extract the       */
   /* system-specific stream handle from a given FreeType stream object */
-#define STREAM_FILE( stream )  ( (FT_FILE*)stream->descriptor.pointer )
+#define STREAM_FILE( stream )  ( (FT_FILE*)(stream)->descriptor.pointer )
 
 
   /*************************************************************************/

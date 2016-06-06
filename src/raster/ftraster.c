@@ -455,9 +455,9 @@
                         - ras.precision_half )
 
 #define IS_BOTTOM_OVERSHOOT( x ) \
-          (Bool)( CEILING( x ) - x >= ras.precision_half )
+          (Bool)( CEILING( x ) - (x) >= ras.precision_half )
 #define IS_TOP_OVERSHOOT( x )    \
-          (Bool)( x - FLOOR( x ) >= ras.precision_half )
+          (Bool)( (x) - FLOOR( x ) >= ras.precision_half )
 
   /* The most used variables are positioned at the top of the structure. */
   /* Thus, their offset can be coded with less opcodes, resulting in a   */
@@ -1690,8 +1690,8 @@
                          Long  swap = x; \
                                          \
                                          \
-                         x = y;          \
-                         y = swap;       \
+                         (x) = y;          \
+                         (y) = swap;       \
                        } while ( 0 )
 
 

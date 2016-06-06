@@ -62,7 +62,7 @@
    /*  - light-hinted load                                         */
 
 #define LOAD_ADVANCE_FAST_CHECK( flags )                            \
-          ( flags & ( FT_LOAD_NO_SCALE | FT_LOAD_NO_HINTING )    || \
+          ( (flags) & ( FT_LOAD_NO_SCALE | FT_LOAD_NO_HINTING )    || \
             FT_LOAD_TARGET_MODE( flags ) == FT_RENDER_MODE_LIGHT )
 
 

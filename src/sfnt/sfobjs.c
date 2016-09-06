@@ -1003,7 +1003,7 @@
   do                                                        \
   {                                                         \
     FT_TRACE2(( "`%s" #x "' ",                              \
-                vertical ? "vertical " : "" ));             \
+                (vertical) ? "vertical " : "" ));             \
     FT_TRACE3(( "-->\n" ));                                 \
                                                             \
     error = sfnt->load_ ## x( face, stream, vertical );     \

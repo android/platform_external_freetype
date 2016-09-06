@@ -266,7 +266,7 @@ FT_BEGIN_HEADER
                            done_,            \
                            get_interface_ )  \
                                              \
-    face_object_size_,                       \
+    (face_object_size_),                       \
     size_object_size_,                       \
     slot_object_size_,                       \
                                              \

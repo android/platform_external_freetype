@@ -624,7 +624,7 @@
 
 
 #undef  PACK
-#define PACK( x, y )  ( ( x << 4 ) | y )
+#define PACK( x, y )  ( ( (x) << 4 ) | (y) )
 
 
   static

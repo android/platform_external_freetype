@@ -380,7 +380,7 @@ extern "C++"
                   FT_ULong     size );
 
 #define FT_STRCPYN( dst, src, size )                                         \
-          ft_mem_strcpyn( (char*)dst, (const char*)(src), (FT_ULong)(size) )
+          ft_mem_strcpyn( (char*)(dst), (const char*)(src), (FT_ULong)(size) )
 
  /* */
 

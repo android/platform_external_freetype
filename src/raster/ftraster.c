@@ -453,9 +453,9 @@
                         - ras.precision_half )
 
 #define IS_BOTTOM_OVERSHOOT( x ) \
-          (Bool)( CEILING( x ) - x >= ras.precision_half )
+          (Bool)( CEILING( x ) - (x) >= ras.precision_half )
 #define IS_TOP_OVERSHOOT( x )    \
-          (Bool)( x - FLOOR( x ) >= ras.precision_half )
+          (Bool)( (x) - FLOOR( x ) >= ras.precision_half )
 
 #if FT_RENDER_POOL_SIZE > 2048
 #define FT_MAX_BLACK_POOL  ( FT_RENDER_POOL_SIZE / sizeof ( Long ) )
@@ -1694,8 +1694,8 @@
                          Long  swap = x; \
                                          \
                                          \
-                         x = y;          \
-                         y = swap;       \
+                         (x) = y;          \
+                         (y) = swap;       \
                        } while ( 0 )
 
 

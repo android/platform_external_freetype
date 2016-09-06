@@ -78,10 +78,10 @@ FT_BEGIN_HEADER
    *  largest error less than 7% compared to the exact value.
    */
 #define FT_HYPOT( x, y )                 \
-          ( x = FT_ABS( x ),             \
-            y = FT_ABS( y ),             \
-            x > y ? x + ( 3 * y >> 3 )   \
-                  : y + ( 3 * x >> 3 ) )
+          ( (x) = FT_ABS( x ),             \
+            (y) = FT_ABS( y ),             \
+            (x) > (y) ? (x) + ( 3 * (y) >> 3 )   \
+                  : (y) + ( 3 * (x) >> 3 ) )
 
   /* we use FT_TYPEOF to suppress signedness compilation warnings */
 #define FT_PAD_FLOOR( x, n )  ( (x) & ~FT_TYPEOF( x )( (n)-1 ) )
@@ -1197,7 +1197,7 @@ FT_BEGIN_HEADER
 #ifndef FT_CONFIG_OPTION_PIC
 
 #define FT_DECLARE_RENDERER( class_ )               \
-  FT_EXPORT_VAR( const FT_Renderer_Class ) class_;
+  FT_EXPORT_VAR( const FT_Renderer_Class ) (class_);
 
 #define FT_DEFINE_RENDERER(                  \
           class_,                            \
@@ -1228,7 +1228,7 @@ FT_BEGIN_HEADER
                            init_,            \
                            done_,            \
                            get_interface_ )  \
-    glyph_format_,                           \
+    (glyph_format_),                           \
                                              \
     render_glyph_,                           \
     transform_glyph_,                        \

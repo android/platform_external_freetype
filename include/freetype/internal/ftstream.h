@@ -40,10 +40,10 @@ FT_BEGIN_HEADER
 #define FT_FRAME_OP_SHIFT         2
 #define FT_FRAME_OP_SIGNED        1
 #define FT_FRAME_OP_LITTLE        2
-#define FT_FRAME_OP_COMMAND( x )  ( x >> FT_FRAME_OP_SHIFT )
+#define FT_FRAME_OP_COMMAND( x )  ( (x) >> FT_FRAME_OP_SHIFT )
 
 #define FT_MAKE_FRAME_OP( command, little, sign ) \
-          ( ( command << FT_FRAME_OP_SHIFT ) | ( little << 1 ) | sign )
+          ( ( (command) << FT_FRAME_OP_SHIFT ) | ( (little) << 1 ) | (sign) )
 
 #define FT_FRAME_OP_END    0
 #define FT_FRAME_OP_START  1  /* start a new frame     */
@@ -215,47 +215,47 @@ FT_BEGIN_HEADER
 
 
 #define FT_NEXT_CHAR( buffer )       \
-          ( (signed char)*buffer++ )
+          ( (signed char)*(buffer)++ )
 
 #define FT_NEXT_BYTE( buffer )         \
-          ( (unsigned char)*buffer++ )
+          ( (unsigned char)*(buffer)++ )
 
 #define FT_NEXT_SHORT( buffer )                                   \
-          ( (short)( buffer += 2, FT_PEEK_SHORT( buffer - 2 ) ) )
+          ( (short)( (buffer) += 2, FT_PEEK_SHORT( (buffer) - 2 ) ) )
 
 #define FT_NEXT_USHORT( buffer )                                            \
-          ( (unsigned short)( buffer += 2, FT_PEEK_USHORT( buffer - 2 ) ) )
+          ( (unsigned short)( (buffer) += 2, FT_PEEK_USHORT( (buffer) - 2 ) ) )
 
 #define FT_NEXT_OFF3( buffer )                                  \
-          ( (long)( buffer += 3, FT_PEEK_OFF3( buffer - 3 ) ) )
+          ( (long)( (buffer) += 3, FT_PEEK_OFF3( (buffer) - 3 ) ) )
 
 #define FT_NEXT_UOFF3( buffer )                                           \
-          ( (unsigned long)( buffer += 3, FT_PEEK_UOFF3( buffer - 3 ) ) )
+          ( (unsigned long)( (buffer) += 3, FT_PEEK_UOFF3( (buffer) - 3 ) ) )
 
 #define FT_NEXT_LONG( buffer )                                  \
-          ( (long)( buffer += 4, FT_PEEK_LONG( buffer - 4 ) ) )
+          ( (long)( (buffer) += 4, FT_PEEK_LONG( (buffer) - 4 ) ) )
 
 #define FT_NEXT_ULONG( buffer )                                           \
-          ( (unsigned long)( buffer += 4, FT_PEEK_ULONG( buffer - 4 ) ) )
+          ( (unsigned long)( (buffer) += 4, FT_PEEK_ULONG( (buffer) - 4 ) ) )
 
 
 #define FT_NEXT_SHORT_LE( buffer )                                   \
-          ( (short)( buffer += 2, FT_PEEK_SHORT_LE( buffer - 2 ) ) )
+          ( (short)( (buffer) += 2, FT_PEEK_SHORT_LE( (buffer) - 2 ) ) )
 
 #define FT_NEXT_USHORT_LE( buffer )                                            \
-          ( (unsigned short)( buffer += 2, FT_PEEK_USHORT_LE( buffer - 2 ) ) )
+          ( (unsigned short)( (buffer) += 2, FT_PEEK_USHORT_LE( (buffer) - 2 ) ) )
 
 #define FT_NEXT_OFF3_LE( buffer )                                  \
-          ( (long)( buffer += 3, FT_PEEK_OFF3_LE( buffer - 3 ) ) )
+          ( (long)( (buffer) += 3, FT_PEEK_OFF3_LE( (buffer) - 3 ) ) )
 
 #define FT_NEXT_UOFF3_LE( buffer )                                           \
-          ( (unsigned long)( buffer += 3, FT_PEEK_UOFF3_LE( buffer - 3 ) ) )
+          ( (unsigned long)( (buffer) += 3, FT_PEEK_UOFF3_LE( (buffer) - 3 ) ) )
 
 #define FT_NEXT_LONG_LE( buffer )                                  \
-          ( (long)( buffer += 4, FT_PEEK_LONG_LE( buffer - 4 ) ) )
+          ( (long)( (buffer) += 4, FT_PEEK_LONG_LE( (buffer) - 4 ) ) )
 
 #define FT_NEXT_ULONG_LE( buffer )                                           \
-          ( (unsigned long)( buffer += 4, FT_PEEK_ULONG_LE( buffer - 4 ) ) )
+          ( (unsigned long)( (buffer) += 4, FT_PEEK_ULONG_LE( (buffer) - 4 ) ) )
 
 
   /*************************************************************************/
@@ -300,7 +300,7 @@ FT_BEGIN_HEADER
 #endif
 
 #define FT_READ_MACRO( func, type, var )        \
-          ( var = (type)func( stream, &error ), \
+          ( (var) = (type)func( stream, &error ), \
             error != FT_Err_Ok )
 
 #define FT_READ_BYTE( var )       FT_READ_MACRO( FT_Stream_ReadChar, FT_Byte, var )
@@ -502,7 +502,7 @@ FT_BEGIN_HEADER
 #define FT_STREAM_READ_AT( position, buffer, count )            \
           FT_SET_ERROR( FT_Stream_ReadAt( stream,               \
                                           (FT_ULong)(position), \
-                                          (FT_Byte*)buffer,     \
+                                          (FT_Byte*)(buffer),     \
                                           (FT_ULong)(count) ) )
 
 #define FT_STREAM_READ_FIELDS( fields, object )                          \

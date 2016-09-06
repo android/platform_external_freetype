@@ -39,7 +39,7 @@ typedef unsigned long  ulg;
 
 
 #define ERR_RETURN(strm,err) \
-  return (strm->msg = (char*)ERR_MSG(err), (err))
+  return ((strm)->msg = (char*)ERR_MSG(err), (err))
 /* To be used only when the state is known to be valid */
 
         /* common constants */

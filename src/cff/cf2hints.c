@@ -1143,7 +1143,7 @@
      */
 
 #define cf2_perp( a, b )                                    \
-          ( FT_MulFix( a.x, b.y ) - FT_MulFix( a.y, b.x ) )
+          ( FT_MulFix( (a).x, (b).y ) - FT_MulFix( (a).y, (b).x ) )
 
   /* round and divide by 32 */
 #define CF2_CS_SCALE( x )         \

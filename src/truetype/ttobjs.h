@@ -425,7 +425,7 @@ FT_BEGIN_HEADER
 
 
   /* auxiliary */
-#define IS_HINTED( flags )  ( ( flags & FT_LOAD_NO_HINTING ) == 0 )
+#define IS_HINTED( flags )  ( ( (flags) & FT_LOAD_NO_HINTING ) == 0 )
 
 
 FT_END_HEADER

@@ -144,7 +144,7 @@ extern void*  _af_debug_hints;
     while ( _delta > AF_ANGLE_PI )              \
       _delta -= AF_ANGLE_2PI;                   \
                                                 \
-    result = _delta;                            \
+    (result) = _delta;                            \
   FT_END_STMNT
 
 

@@ -71,10 +71,10 @@
   /* transfer sign leaving a positive number */
 #define FT_MOVE_SIGN( x, s ) \
   FT_BEGIN_STMNT             \
-    if ( x < 0 )             \
+    if ( (x) < 0 )             \
     {                        \
-      x = -x;                \
-      s = -s;                \
+      (x) = -(x);                \
+      (s) = -(s);                \
     }                        \
   FT_END_STMNT
 

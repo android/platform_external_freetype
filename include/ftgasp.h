@@ -89,7 +89,7 @@
    * @since:
    *   2.3.0
    */
-#define FT_GASP_NO_TABLE               -1
+#define FT_GASP_NO_TABLE               (-1)
 #define FT_GASP_DO_GRIDFIT           0x01
 #define FT_GASP_DO_GRAY              0x02
 #define FT_GASP_SYMMETRIC_SMOOTHING  0x08

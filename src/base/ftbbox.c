@@ -44,21 +44,21 @@
 
 #define FT_UPDATE_BBOX( p, bbox ) \
   FT_BEGIN_STMNT                  \
-    if ( p->x < bbox.xMin )       \
-      bbox.xMin = p->x;           \
-    if ( p->x > bbox.xMax )       \
-      bbox.xMax = p->x;           \
-    if ( p->y < bbox.yMin )       \
-      bbox.yMin = p->y;           \
-    if ( p->y > bbox.yMax )       \
-      bbox.yMax = p->y;           \
+    if ( (p)->x < (bbox).xMin )       \
+      (bbox).xMin = (p)->x;           \
+    if ( (p)->x > (bbox).xMax )       \
+      (bbox).xMax = (p)->x;           \
+    if ( (p)->y < (bbox).yMin )       \
+      (bbox).yMin = (p)->y;           \
+    if ( (p)->y > (bbox).yMax )       \
+      (bbox).yMax = (p)->y;           \
   FT_END_STMNT
 
 #define CHECK_X( p, bbox )                         \
-          ( p->x < bbox.xMin || p->x > bbox.xMax )
+          ( (p)->x < (bbox).xMin || (p)->x > (bbox).xMax )
 
 #define CHECK_Y( p, bbox )                         \
-          ( p->y < bbox.yMin || p->y > bbox.yMax )
+          ( (p)->y < (bbox).yMin || (p)->y > (bbox).yMax )
 
 
   /*************************************************************************/

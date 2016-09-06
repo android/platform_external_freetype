@@ -448,7 +448,7 @@ FT_BEGIN_HEADER
 
   /* */
 
-#define FT_CURVE_TAG( flag )  ( flag & 3 )
+#define FT_CURVE_TAG( flag )  ( (flag) & 3 )
 
 #define FT_CURVE_TAG_ON            1
 #define FT_CURVE_TAG_CONIC         0
@@ -667,10 +667,10 @@ FT_BEGIN_HEADER
   /*                                                                       */
 #ifndef FT_IMAGE_TAG
 #define FT_IMAGE_TAG( value, _x1, _x2, _x3, _x4 )  \
-          value = ( ( (unsigned long)_x1 << 24 ) | \
-                    ( (unsigned long)_x2 << 16 ) | \
-                    ( (unsigned long)_x3 << 8  ) | \
-                      (unsigned long)_x4         )
+          value = ( ( (unsigned long)(_x1) << 24 ) | \
+                    ( (unsigned long)(_x2) << 16 ) | \
+                    ( (unsigned long)(_x3) << 8  ) | \
+                      (unsigned long)(_x4)         )
 #endif /* FT_IMAGE_TAG */
 
 

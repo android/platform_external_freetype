@@ -29,30 +29,30 @@ FT_BEGIN_HEADER
   /* an auxiliary macro to decode a UTF-8 character -- since we only use */
   /* hard-coded, self-converted data, no error checking is performed     */
 #define GET_UTF8_CHAR( ch, p )                    \
-          ch = (unsigned char)*p++;               \
-          if ( ch >= 0x80 )                       \
+          (ch) = (unsigned char)*(p)++;           \
+          if ( (ch) >= 0x80 )                     \
           {                                       \
             FT_UInt  len;                         \
                                                   \
                                                   \
-            if ( ch < 0xE0 )                      \
+            if ( (ch) < 0xE0 )                    \
             {                                     \
               len = 1;                            \
-              ch &= 0x1F;                         \
+              (ch) &= 0x1F;                       \
             }                                     \
-            else if ( ch < 0xF0 )                 \
+            else if ( (ch) < 0xF0 )               \
             {                                     \
               len = 2;                            \
-              ch &= 0x0F;                         \
+              (ch) &= 0x0F;                       \
             }                                     \
             else                                  \
             {                                     \
               len = 3;                            \
-              ch &= 0x07;                         \
+              (ch) &= 0x07;                       \
             }                                     \
                                                   \
             for ( ; len > 0; len-- )              \
-              ch = ( ch << 6 ) | ( *p++ & 0x3F ); \
+              (ch) = ( (ch) << 6 ) | ( *(p)++ & 0x3F ); \
           }
 
 

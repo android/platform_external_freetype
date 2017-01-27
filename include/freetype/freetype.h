@@ -1731,7 +1731,6 @@ FT_BEGIN_HEADER
   /*    position (e.g., coordinates (0,0) on the baseline).  Of course,    */
   /*    `slot->format' is also changed to @FT_GLYPH_FORMAT_BITMAP.         */
   /*                                                                       */
-  /* <Note>                                                                */
   /*    Here is a small pseudo code fragment that shows how to use         */
   /*    `lsb_delta' and `rsb_delta':                                       */
   /*                                                                       */
@@ -1758,6 +1757,12 @@ FT_BEGIN_HEADER
   /*        origin_x += face->glyph->advance.x;                            */
   /*      endfor                                                           */
   /*    }                                                                  */
+  /*                                                                       */
+  /*    If you use strong auto-hinting, you *must* apply these delta       */
+  /*    values!  Otherwise you will experience far too large inter-glyph   */
+  /*    spacing at small rendering sizes in most cases.  Note that it      */
+  /*    doesn't harm to use the above code for other hinting modes also,   */
+  /*    since the delta values are zero then.                              */
   /*                                                                       */
   typedef struct  FT_GlyphSlotRec_
   {
@@ -2326,7 +2331,10 @@ FT_BEGIN_HEADER
   /*    FT_Select_Size                                                     */
   /*                                                                       */
   /* <Description>                                                         */
-  /*    Select a bitmap strike.                                            */
+  /*    Select a bitmap strike.  To be more precise, this function sets    */
+  /*    the scaling factors of the active @FT_Size object in a face so     */
+  /*    that bitmaps from this particular strike are taken by              */
+  /*    @FT_Load_Glyph and friends.                                        */
   /*                                                                       */
   /* <InOut>                                                               */
   /*    face         :: A handle to a target face object.                  */
@@ -2337,6 +2345,20 @@ FT_BEGIN_HEADER
   /*                                                                       */
   /* <Return>                                                              */
   /*    FreeType error code.  0~means success.                             */
+  /*                                                                       */
+  /* <Note>                                                                */
+  /*    For bitmaps embedded in outline fonts it is common that only a     */
+  /*    subset of the available glyphs at a given ppem value is available. */
+  /*    FreeType silently uses outlines if there is no bitmap for a given  */
+  /*    glyph index.                                                       */
+  /*                                                                       */
+  /*    For GX variation fonts, a bitmap strike makes sense only if the    */
+  /*    default instance is active (this is, no glyph variation takes      */
+  /*    place); otherwise, FreeType simply ignores bitmap strikes.  The    */
+  /*    same is true for all named instances that are different from the   */
+  /*    default instance.                                                  */
+  /*                                                                       */
+  /*    Don't use this function if you are using the FreeType cache API.   */
   /*                                                                       */
   FT_EXPORT( FT_Error )
   FT_Select_Size( FT_Face  face,
@@ -2790,6 +2812,14 @@ FT_BEGIN_HEADER
    *
    *     Currently, this flag is only implemented for TrueType fonts.
    *
+   *   FT_LOAD_BITMAP_METRICS_ONLY ::
+   *     This flag is used to request loading of the metrics and bitmap
+   *     image information of a (possibly embedded) bitmap glyph without
+   *     allocating or copying the bitmap image data itself.  No effect if
+   *     the target glyph is not a bitmap image.
+   *
+   *     This flag unsets @FT_LOAD_RENDER.
+   *
    *   FT_LOAD_CROP_BITMAP ::
    *     Ignored.  Deprecated.
    *
@@ -2836,6 +2866,7 @@ FT_BEGIN_HEADER
   /* Bits 16..19 are used by `FT_LOAD_TARGET_' */
 #define FT_LOAD_COLOR                        ( 1L << 20 )
 #define FT_LOAD_COMPUTE_METRICS              ( 1L << 21 )
+#define FT_LOAD_BITMAP_METRICS_ONLY          ( 1L << 22 )
 
   /* */
 
@@ -4210,7 +4241,7 @@ FT_BEGIN_HEADER
    */
 #define FREETYPE_MAJOR  2
 #define FREETYPE_MINOR  7
-#define FREETYPE_PATCH  0
+#define FREETYPE_PATCH  1
 
 
   /*************************************************************************/

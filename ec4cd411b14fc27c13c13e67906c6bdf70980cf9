@@ -1,0 +1,11 @@
+Code-Review+2: Andrew Hsieh <andrewhsieh@google.com>
+Code-Review+1: jungshik <jungshik@google.com>
+Code-Review+1: Behdad Esfahbod <behdad@google.com>
+Code-Review+1: Jiyong Park <jiyong@google.com>
+Verified+1: Jae Shin <jaeshin@google.com>
+Presubmit-Verified+1: Treehugger Robot <treehugger-gerrit@google.com>
+Submitted-by: Jae Shin <jaeshin@google.com>
+Submitted-at: Mon, 23 Oct 2017 02:43:49 +0000
+Reviewed-on: https://android-review.googlesource.com/511999
+Project: platform/external/freetype
+Branch: refs/heads/master

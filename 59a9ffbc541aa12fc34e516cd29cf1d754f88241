@@ -1,0 +1,8 @@
+Presubmit-Verified+1: Treehugger Robot <treehugger-gerrit@google.com>
+Verified+1: Chih-hung Hsieh <chh@google.com>
+Code-Review+2: Chih-hung Hsieh <chh@google.com>
+Submitted-by: Chih-hung Hsieh <chh@google.com>
+Submitted-at: Wed, 29 Nov 2017 23:51:43 +0000
+Reviewed-on: https://android-review.googlesource.com/551299
+Project: platform/external/freetype
+Branch: refs/heads/master

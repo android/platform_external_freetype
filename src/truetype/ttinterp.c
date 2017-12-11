@@ -7605,6 +7605,7 @@
       exc->twilight.n_points = (FT_UShort)num_twilight_points;
     }
 
+<<<<<<< HEAD   (8c932b Necessary changes to build FreeType on Android)
     /* Set up loop detectors.  We restrict the number of LOOPCALL loops  */
     /* and the number of JMPR, JROT, and JROF calls with a negative      */
     /* argument to values that depend on the size of the CVT table and   */
@@ -7626,6 +7627,37 @@
     else
       exc->loopcall_counter_max = FT_MAX( 100,
                                           5 * exc->cvtSize );
+=======
+    /* Set up loop detectors.  We restrict the number of LOOPCALL loops */
+    /* and the number of JMPR, JROT, and JROF calls with a negative     */
+    /* argument to values that depend on various parameters like the    */
+    /* size of the CVT table or the number of points in the current     */
+    /* glyph (if applicable).                                           */
+    /*                                                                  */
+    /* The idea is that in real-world bytecode you either iterate over  */
+    /* all CVT entries (in the `prep' table), or over all points (or    */
+    /* contours, in the `glyf' table) of a glyph, and such iterations   */
+    /* don't happen very often.                                         */
+    exc->loopcall_counter = 0;
+    exc->neg_jump_counter = 0;
+
+    /* The maximum values are heuristic. */
+    if ( exc->pts.n_points )
+      exc->loopcall_counter_max = FT_MAX( 50,
+                                          10 * exc->pts.n_points ) +
+                                  FT_MAX( 50,
+                                          exc->cvtSize / 10 );
+    else
+      exc->loopcall_counter_max = FT_MAX( 100,
+                                          10 * exc->cvtSize );
+
+    /* as a protection against an unreasonable number of CVT entries  */
+    /* we assume at most 100 control values per glyph for the counter */
+    if ( exc->loopcall_counter_max >
+         100 * (FT_ULong)exc->face->root.num_glyphs )
+      exc->loopcall_counter_max = 100 * (FT_ULong)exc->face->root.num_glyphs;
+
+>>>>>>> BRANCH (48a9a2 Merge "Use -Werror in external/freetype" am: 51036df35f)
     FT_TRACE5(( "TT_RunIns: Limiting total number of loops in LOOPCALL"
                 " to %d\n", exc->loopcall_counter_max ));
 

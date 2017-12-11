@@ -1572,6 +1572,7 @@
   cff_get_var_blend( CFF_Face     face,
                      FT_UInt     *num_coords,
                      FT_Fixed*   *coords,
+<<<<<<< HEAD   (8c932b Necessary changes to build FreeType on Android)
                      FT_Fixed*   *normalizedcoords,
                      FT_MM_Var*  *mm_var )
   {
@@ -2420,6 +2421,780 @@
                                        : CFF_CODE_TOPDICT,
                                   font,
                                   face );
+=======
+                     FT_MM_Var*  *mm_var )
+  {
+    FT_Service_MultiMasters  mm = (FT_Service_MultiMasters)face->mm;
+
+
+    return mm->get_var_blend( FT_FACE( face ), num_coords, coords, mm_var );
+  }
+
+
+  FT_LOCAL_DEF( void )
+  cff_done_blend( CFF_Face  face )
+  {
+    FT_Service_MultiMasters  mm = (FT_Service_MultiMasters)face->mm;
+
+
+    mm->done_blend( FT_FACE( face ) );
+  }
+
+#endif /* TT_CONFIG_OPTION_GX_VAR_SUPPORT */
+
+
+  static void
+  cff_encoding_done( CFF_Encoding  encoding )
+  {
+    encoding->format = 0;
+    encoding->offset = 0;
+    encoding->count  = 0;
+  }
+
+
+  static FT_Error
+  cff_encoding_load( CFF_Encoding  encoding,
+                     CFF_Charset   charset,
+                     FT_UInt       num_glyphs,
+                     FT_Stream     stream,
+                     FT_ULong      base_offset,
+                     FT_ULong      offset )
+  {
+    FT_Error   error = FT_Err_Ok;
+    FT_UInt    count;
+    FT_UInt    j;
+    FT_UShort  glyph_sid;
+    FT_UInt    glyph_code;
+
+
+    /* Check for charset->sids.  If we do not have this, we fail. */
+    if ( !charset->sids )
+    {
+      error = FT_THROW( Invalid_File_Format );
+      goto Exit;
+    }
+
+    /* Zero out the code to gid/sid mappings. */
+    for ( j = 0; j < 256; j++ )
+    {
+      encoding->sids [j] = 0;
+      encoding->codes[j] = 0;
+    }
+
+    /* Note: The encoding table in a CFF font is indexed by glyph index;  */
+    /* the first encoded glyph index is 1.  Hence, we read the character  */
+    /* code (`glyph_code') at index j and make the assignment:            */
+    /*                                                                    */
+    /*    encoding->codes[glyph_code] = j + 1                             */
+    /*                                                                    */
+    /* We also make the assignment:                                       */
+    /*                                                                    */
+    /*    encoding->sids[glyph_code] = charset->sids[j + 1]               */
+    /*                                                                    */
+    /* This gives us both a code to GID and a code to SID mapping.        */
+
+    if ( offset > 1 )
+    {
+      encoding->offset = base_offset + offset;
+
+      /* we need to parse the table to determine its size */
+      if ( FT_STREAM_SEEK( encoding->offset ) ||
+           FT_READ_BYTE( encoding->format )   ||
+           FT_READ_BYTE( count )              )
+        goto Exit;
+
+      switch ( encoding->format & 0x7F )
+      {
+      case 0:
+        {
+          FT_Byte*  p;
+
+
+          /* By convention, GID 0 is always ".notdef" and is never */
+          /* coded in the font.  Hence, the number of codes found  */
+          /* in the table is `count+1'.                            */
+          /*                                                       */
+          encoding->count = count + 1;
+
+          if ( FT_FRAME_ENTER( count ) )
+            goto Exit;
+
+          p = (FT_Byte*)stream->cursor;
+
+          for ( j = 1; j <= count; j++ )
+          {
+            glyph_code = *p++;
+
+            /* Make sure j is not too big. */
+            if ( j < num_glyphs )
+            {
+              /* Assign code to GID mapping. */
+              encoding->codes[glyph_code] = (FT_UShort)j;
+
+              /* Assign code to SID mapping. */
+              encoding->sids[glyph_code] = charset->sids[j];
+            }
+          }
+
+          FT_FRAME_EXIT();
+        }
+        break;
+
+      case 1:
+        {
+          FT_UInt  nleft;
+          FT_UInt  i = 1;
+          FT_UInt  k;
+
+
+          encoding->count = 0;
+
+          /* Parse the Format1 ranges. */
+          for ( j = 0;  j < count; j++, i += nleft )
+          {
+            /* Read the first glyph code of the range. */
+            if ( FT_READ_BYTE( glyph_code ) )
+              goto Exit;
+
+            /* Read the number of codes in the range. */
+            if ( FT_READ_BYTE( nleft ) )
+              goto Exit;
+
+            /* Increment nleft, so we read `nleft + 1' codes/sids. */
+            nleft++;
+
+            /* compute max number of character codes */
+            if ( (FT_UInt)nleft > encoding->count )
+              encoding->count = nleft;
+
+            /* Fill in the range of codes/sids. */
+            for ( k = i; k < nleft + i; k++, glyph_code++ )
+            {
+              /* Make sure k is not too big. */
+              if ( k < num_glyphs && glyph_code < 256 )
+              {
+                /* Assign code to GID mapping. */
+                encoding->codes[glyph_code] = (FT_UShort)k;
+
+                /* Assign code to SID mapping. */
+                encoding->sids[glyph_code] = charset->sids[k];
+              }
+            }
+          }
+
+          /* simple check; one never knows what can be found in a font */
+          if ( encoding->count > 256 )
+            encoding->count = 256;
+        }
+        break;
+
+      default:
+        FT_ERROR(( "cff_encoding_load: invalid table format\n" ));
+        error = FT_THROW( Invalid_File_Format );
+        goto Exit;
+      }
+
+      /* Parse supplemental encodings, if any. */
+      if ( encoding->format & 0x80 )
+      {
+        FT_UInt  gindex;
+
+
+        /* count supplements */
+        if ( FT_READ_BYTE( count ) )
+          goto Exit;
+
+        for ( j = 0; j < count; j++ )
+        {
+          /* Read supplemental glyph code. */
+          if ( FT_READ_BYTE( glyph_code ) )
+            goto Exit;
+
+          /* Read the SID associated with this glyph code. */
+          if ( FT_READ_USHORT( glyph_sid ) )
+            goto Exit;
+
+          /* Assign code to SID mapping. */
+          encoding->sids[glyph_code] = glyph_sid;
+
+          /* First, look up GID which has been assigned to */
+          /* SID glyph_sid.                                */
+          for ( gindex = 0; gindex < num_glyphs; gindex++ )
+          {
+            if ( charset->sids[gindex] == glyph_sid )
+            {
+              encoding->codes[glyph_code] = (FT_UShort)gindex;
+              break;
+            }
+          }
+        }
+      }
+    }
+    else
+    {
+      /* We take into account the fact a CFF font can use a predefined */
+      /* encoding without containing all of the glyphs encoded by this */
+      /* encoding (see the note at the end of section 12 in the CFF    */
+      /* specification).                                               */
+
+      switch ( (FT_UInt)offset )
+      {
+      case 0:
+        /* First, copy the code to SID mapping. */
+        FT_ARRAY_COPY( encoding->sids, cff_standard_encoding, 256 );
+        goto Populate;
+
+      case 1:
+        /* First, copy the code to SID mapping. */
+        FT_ARRAY_COPY( encoding->sids, cff_expert_encoding, 256 );
+
+      Populate:
+        /* Construct code to GID mapping from code to SID mapping */
+        /* and charset.                                           */
+
+        encoding->count = 0;
+
+        error = cff_charset_compute_cids( charset, num_glyphs,
+                                          stream->memory );
+        if ( error )
+          goto Exit;
+
+        for ( j = 0; j < 256; j++ )
+        {
+          FT_UInt  sid = encoding->sids[j];
+          FT_UInt  gid = 0;
+
+
+          if ( sid )
+            gid = cff_charset_cid_to_gindex( charset, sid );
+
+          if ( gid != 0 )
+          {
+            encoding->codes[j] = (FT_UShort)gid;
+            encoding->count    = j + 1;
+          }
+          else
+          {
+            encoding->codes[j] = 0;
+            encoding->sids [j] = 0;
+          }
+        }
+        break;
+
+      default:
+        FT_ERROR(( "cff_encoding_load: invalid table format\n" ));
+        error = FT_THROW( Invalid_File_Format );
+        goto Exit;
+      }
+    }
+
+  Exit:
+
+    /* Clean up if there was an error. */
+    return error;
+  }
+
+
+  /* Parse private dictionary; first call is always from `cff_face_init', */
+  /* so NDV has not been set for CFF2 variation.                          */
+  /*                                                                      */
+  /* `cff_slot_load' must call this function each time NDV changes.       */
+  FT_LOCAL_DEF( FT_Error )
+  cff_load_private_dict( CFF_Font     font,
+                         CFF_SubFont  subfont,
+                         FT_UInt      lenNDV,
+                         FT_Fixed*    NDV )
+  {
+    FT_Error         error  = FT_Err_Ok;
+    CFF_ParserRec    parser;
+    CFF_FontRecDict  top    = &subfont->font_dict;
+    CFF_Private      priv   = &subfont->private_dict;
+    FT_Stream        stream = font->stream;
+    FT_UInt          stackSize;
+
+
+    /* store handle needed to access memory, vstore for blend;    */
+    /* we need this for clean-up even if there is no private DICT */
+    subfont->blend.font   = font;
+    subfont->blend.usedBV = FALSE;  /* clear state */
+
+    if ( !top->private_offset || !top->private_size )
+      goto Exit2;       /* no private DICT, do nothing */
+
+    /* set defaults */
+    FT_ZERO( priv );
+
+    priv->blue_shift       = 7;
+    priv->blue_fuzz        = 1;
+    priv->lenIV            = -1;
+    priv->expansion_factor = (FT_Fixed)( 0.06 * 0x10000L );
+    priv->blue_scale       = (FT_Fixed)( 0.039625 * 0x10000L * 1000 );
+
+    /* provide inputs for blend calculations */
+    priv->subfont   = subfont;
+    subfont->lenNDV = lenNDV;
+    subfont->NDV    = NDV;
+
+    stackSize = font->cff2 ? font->top_font.font_dict.maxstack
+                           : CFF_MAX_STACK_DEPTH + 1;
+
+    if ( cff_parser_init( &parser,
+                          font->cff2 ? CFF2_CODE_PRIVATE : CFF_CODE_PRIVATE,
+                          priv,
+                          font->library,
+                          stackSize,
+                          top->num_designs,
+                          top->num_axes ) )
+      goto Exit;
+
+    if ( FT_STREAM_SEEK( font->base_offset + top->private_offset ) ||
+         FT_FRAME_ENTER( top->private_size )                       )
+      goto Exit;
+
+    FT_TRACE4(( " private dictionary:\n" ));
+    error = cff_parser_run( &parser,
+                            (FT_Byte*)stream->cursor,
+                            (FT_Byte*)stream->limit );
+    FT_FRAME_EXIT();
+
+    if ( error )
+      goto Exit;
+
+    /* ensure that `num_blue_values' is even */
+    priv->num_blue_values &= ~1;
+
+  Exit:
+    /* clean up */
+    cff_blend_clear( subfont ); /* clear blend stack */
+    cff_parser_done( &parser ); /* free parser stack */
+
+  Exit2:
+    /* no clean up (parser not initialized) */
+    return error;
+  }
+
+
+  /* There are 3 ways to call this function, distinguished by code.  */
+  /*                                                                 */
+  /* . CFF_CODE_TOPDICT for either a CFF Top DICT or a CFF Font DICT */
+  /* . CFF2_CODE_TOPDICT for CFF2 Top DICT                           */
+  /* . CFF2_CODE_FONTDICT for CFF2 Font DICT                         */
+
+  static FT_Error
+  cff_subfont_load( CFF_SubFont  subfont,
+                    CFF_Index    idx,
+                    FT_UInt      font_index,
+                    FT_Stream    stream,
+                    FT_ULong     base_offset,
+                    FT_UInt      code,
+                    CFF_Font     font )
+  {
+    FT_Error         error;
+    CFF_ParserRec    parser;
+    FT_Byte*         dict = NULL;
+    FT_ULong         dict_len;
+    CFF_FontRecDict  top  = &subfont->font_dict;
+    CFF_Private      priv = &subfont->private_dict;
+
+    FT_Bool  cff2      = FT_BOOL( code == CFF2_CODE_TOPDICT  ||
+                                  code == CFF2_CODE_FONTDICT );
+    FT_UInt  stackSize = cff2 ? CFF2_DEFAULT_STACK
+                              : CFF_MAX_STACK_DEPTH;
+
+
+    /* Note: We use default stack size for CFF2 Font DICT because        */
+    /*       Top and Font DICTs are not allowed to have blend operators. */
+    error = cff_parser_init( &parser,
+                             code,
+                             &subfont->font_dict,
+                             font->library,
+                             stackSize,
+                             0,
+                             0 );
+    if ( error )
+      goto Exit;
+
+    /* set defaults */
+    FT_ZERO( top );
+
+    top->underline_position  = -( 100L << 16 );
+    top->underline_thickness = 50L << 16;
+    top->charstring_type     = 2;
+    top->font_matrix.xx      = 0x10000L;
+    top->font_matrix.yy      = 0x10000L;
+    top->cid_count           = 8720;
+
+    /* we use the implementation specific SID value 0xFFFF to indicate */
+    /* missing entries                                                 */
+    top->version             = 0xFFFFU;
+    top->notice              = 0xFFFFU;
+    top->copyright           = 0xFFFFU;
+    top->full_name           = 0xFFFFU;
+    top->family_name         = 0xFFFFU;
+    top->weight              = 0xFFFFU;
+    top->embedded_postscript = 0xFFFFU;
+
+    top->cid_registry        = 0xFFFFU;
+    top->cid_ordering        = 0xFFFFU;
+    top->cid_font_name       = 0xFFFFU;
+
+    /* set default stack size */
+    top->maxstack            = cff2 ? CFF2_DEFAULT_STACK : 48;
+
+    if ( idx->count )   /* count is nonzero for a real index */
+      error = cff_index_access_element( idx, font_index, &dict, &dict_len );
+    else
+    {
+      /* CFF2 has a fake top dict index;     */
+      /* simulate `cff_index_access_element' */
+
+      /* Note: macros implicitly use `stream' and set `error' */
+      if ( FT_STREAM_SEEK( idx->data_offset )       ||
+           FT_FRAME_EXTRACT( idx->data_size, dict ) )
+        goto Exit;
+
+      dict_len = idx->data_size;
+    }
+
+    if ( !error )
+    {
+      FT_TRACE4(( " top dictionary:\n" ));
+      error = cff_parser_run( &parser, dict, dict + dict_len );
+    }
+
+    /* clean up regardless of error */
+    if ( idx->count )
+      cff_index_forget_element( idx, &dict );
+    else
+      FT_FRAME_RELEASE( dict );
+
+    if ( error )
+      goto Exit;
+
+    /* if it is a CID font, we stop there */
+    if ( top->cid_registry != 0xFFFFU )
+      goto Exit;
+
+    /* Parse the private dictionary, if any.                   */
+    /*                                                         */
+    /* CFF2 does not have a private dictionary in the Top DICT */
+    /* but may have one in a Font DICT.  We need to parse      */
+    /* the latter here in order to load any local subrs.       */
+    error = cff_load_private_dict( font, subfont, 0, 0 );
+    if ( error )
+      goto Exit;
+
+    /* read the local subrs, if any */
+    if ( priv->local_subrs_offset )
+    {
+      if ( FT_STREAM_SEEK( base_offset + top->private_offset +
+                           priv->local_subrs_offset ) )
+        goto Exit;
+
+      error = cff_index_init( &subfont->local_subrs_index, stream, 1, cff2 );
+      if ( error )
+        goto Exit;
+
+      error = cff_index_get_pointers( &subfont->local_subrs_index,
+                                      &subfont->local_subrs, NULL, NULL );
+      if ( error )
+        goto Exit;
+    }
+
+  Exit:
+    cff_parser_done( &parser ); /* free parser stack */
+
+    return error;
+  }
+
+
+  static void
+  cff_subfont_done( FT_Memory    memory,
+                    CFF_SubFont  subfont )
+  {
+    if ( subfont )
+    {
+      cff_index_done( &subfont->local_subrs_index );
+      FT_FREE( subfont->local_subrs );
+
+      FT_FREE( subfont->blend.lastNDV );
+      FT_FREE( subfont->blend.BV );
+      FT_FREE( subfont->blend_stack );
+    }
+  }
+
+
+  FT_LOCAL_DEF( FT_Error )
+  cff_font_load( FT_Library library,
+                 FT_Stream  stream,
+                 FT_Int     face_index,
+                 CFF_Font   font,
+                 FT_Bool    pure_cff,
+                 FT_Bool    cff2 )
+  {
+    static const FT_Frame_Field  cff_header_fields[] =
+    {
+#undef  FT_STRUCTURE
+#define FT_STRUCTURE  CFF_FontRec
+
+      FT_FRAME_START( 3 ),
+        FT_FRAME_BYTE( version_major ),
+        FT_FRAME_BYTE( version_minor ),
+        FT_FRAME_BYTE( header_size ),
+      FT_FRAME_END
+    };
+
+    FT_Error         error;
+    FT_Memory        memory = stream->memory;
+    FT_ULong         base_offset;
+    CFF_FontRecDict  dict;
+    CFF_IndexRec     string_index;
+    FT_UInt          subfont_index;
+
+
+    FT_ZERO( font );
+    FT_ZERO( &string_index );
+
+    dict        = &font->top_font.font_dict;
+    base_offset = FT_STREAM_POS();
+
+    font->library     = library;
+    font->stream      = stream;
+    font->memory      = memory;
+    font->cff2        = cff2;
+    font->base_offset = base_offset;
+
+    /* read CFF font header */
+    if ( FT_STREAM_READ_FIELDS( cff_header_fields, font ) )
+      goto Exit;
+
+    if ( cff2 )
+    {
+      if ( font->version_major != 2 ||
+           font->header_size < 5    )
+      {
+        FT_TRACE2(( "  not a CFF2 font header\n" ));
+        error = FT_THROW( Unknown_File_Format );
+        goto Exit;
+      }
+
+      if ( FT_READ_USHORT( font->top_dict_length ) )
+        goto Exit;
+    }
+    else
+    {
+      FT_Byte  absolute_offset;
+
+
+      if ( FT_READ_BYTE( absolute_offset ) )
+        goto Exit;
+
+      if ( font->version_major != 1 ||
+           font->header_size < 4    ||
+           absolute_offset > 4      )
+      {
+        FT_TRACE2(( "  not a CFF font header\n" ));
+        error = FT_THROW( Unknown_File_Format );
+        goto Exit;
+      }
+    }
+
+    /* skip the rest of the header */
+    if ( FT_STREAM_SEEK( base_offset + font->header_size ) )
+    {
+      /* For pure CFFs we have read only four bytes so far.  Contrary to */
+      /* other formats like SFNT those bytes doesn't define a signature; */
+      /* it is thus possible that the font isn't a CFF at all.           */
+      if ( pure_cff )
+      {
+        FT_TRACE2(( "  not a CFF file\n" ));
+        error = FT_THROW( Unknown_File_Format );
+      }
+      goto Exit;
+    }
+
+    if ( cff2 )
+    {
+      /* For CFF2, the top dict data immediately follow the header    */
+      /* and the length is stored in the header `offSize' field;      */
+      /* there is no index for it.                                    */
+      /*                                                              */
+      /* Use the `font_dict_index' to save the current position       */
+      /* and length of data, but leave count at zero as an indicator. */
+      FT_ZERO( &font->font_dict_index );
+
+      font->font_dict_index.data_offset = FT_STREAM_POS();
+      font->font_dict_index.data_size   = font->top_dict_length;
+
+      /* skip the top dict data for now, we will parse it later */
+      if ( FT_STREAM_SKIP( font->top_dict_length ) )
+        goto Exit;
+
+      /* next, read the global subrs index */
+      if ( FT_SET_ERROR( cff_index_init( &font->global_subrs_index,
+                                         stream, 1, cff2 ) ) )
+        goto Exit;
+    }
+    else
+    {
+      /* for CFF, read the name, top dict, string and global subrs index */
+      if ( FT_SET_ERROR( cff_index_init( &font->name_index,
+                                         stream, 0, cff2 ) ) )
+      {
+        if ( pure_cff )
+        {
+          FT_TRACE2(( "  not a CFF file\n" ));
+          error = FT_THROW( Unknown_File_Format );
+        }
+        goto Exit;
+      }
+
+      /* font names must not be empty */
+      if ( font->name_index.data_size < font->name_index.count )
+      {
+        /* for pure CFFs, we still haven't checked enough bytes */
+        /* to be sure that it is a CFF at all                   */
+        error = pure_cff ? FT_THROW( Unknown_File_Format )
+                         : FT_THROW( Invalid_File_Format );
+        goto Exit;
+      }
+
+      if ( FT_SET_ERROR( cff_index_init( &font->font_dict_index,
+                                         stream, 0, cff2 ) )                 ||
+           FT_SET_ERROR( cff_index_init( &string_index,
+                                         stream, 1, cff2 ) )                 ||
+           FT_SET_ERROR( cff_index_init( &font->global_subrs_index,
+                                         stream, 1, cff2 ) )                 ||
+           FT_SET_ERROR( cff_index_get_pointers( &string_index,
+                                                 &font->strings,
+                                                 &font->string_pool,
+                                                 &font->string_pool_size ) ) )
+        goto Exit;
+
+      /* there must be a Top DICT index entry for each name index entry */
+      if ( font->name_index.count > font->font_dict_index.count )
+      {
+        FT_ERROR(( "cff_font_load:"
+                   " not enough entries in Top DICT index\n" ));
+        error = FT_THROW( Invalid_File_Format );
+        goto Exit;
+      }
+    }
+
+    font->num_strings = string_index.count;
+
+    if ( pure_cff )
+    {
+      /* well, we don't really forget the `disabled' fonts... */
+      subfont_index = (FT_UInt)( face_index & 0xFFFF );
+
+      if ( face_index > 0 && subfont_index >= font->name_index.count )
+      {
+        FT_ERROR(( "cff_font_load:"
+                   " invalid subfont index for pure CFF font (%d)\n",
+                   subfont_index ));
+        error = FT_THROW( Invalid_Argument );
+        goto Exit;
+      }
+
+      font->num_faces = font->name_index.count;
+    }
+    else
+    {
+      subfont_index = 0;
+
+      if ( font->name_index.count > 1 )
+      {
+        FT_ERROR(( "cff_font_load:"
+                   " invalid CFF font with multiple subfonts\n"
+                   "              "
+                   " in SFNT wrapper\n" ));
+        error = FT_THROW( Invalid_File_Format );
+        goto Exit;
+      }
+    }
+
+    /* in case of a font format check, simply exit now */
+    if ( face_index < 0 )
+      goto Exit;
+
+    /* now, parse the top-level font dictionary */
+    FT_TRACE4(( "parsing top-level\n" ));
+    error = cff_subfont_load( &font->top_font,
+                              &font->font_dict_index,
+                              subfont_index,
+                              stream,
+                              base_offset,
+                              cff2 ? CFF2_CODE_TOPDICT : CFF_CODE_TOPDICT,
+                              font );
+    if ( error )
+      goto Exit;
+
+    if ( FT_STREAM_SEEK( base_offset + dict->charstrings_offset ) )
+      goto Exit;
+
+    error = cff_index_init( &font->charstrings_index, stream, 0, cff2 );
+    if ( error )
+      goto Exit;
+
+    /* now, check for a CID or CFF2 font */
+    if ( dict->cid_registry != 0xFFFFU ||
+         cff2                          )
+    {
+      CFF_IndexRec  fd_index;
+      CFF_SubFont   sub = NULL;
+      FT_UInt       idx;
+
+
+      /* for CFF2, read the Variation Store if available;                 */
+      /* this must follow the Top DICT parse and precede any Private DICT */
+      error = cff_vstore_load( &font->vstore,
+                               stream,
+                               base_offset,
+                               dict->vstore_offset );
+      if ( error )
+        goto Exit;
+
+      /* this is a CID-keyed font, we must now allocate a table of */
+      /* sub-fonts, then load each of them separately              */
+      if ( FT_STREAM_SEEK( base_offset + dict->cid_fd_array_offset ) )
+        goto Exit;
+
+      error = cff_index_init( &fd_index, stream, 0, cff2 );
+      if ( error )
+        goto Exit;
+
+      /* Font Dicts are not limited to 256 for CFF2. */
+      /* TODO: support this for CFF2                 */
+      if ( fd_index.count > CFF_MAX_CID_FONTS )
+      {
+        FT_TRACE0(( "cff_font_load: FD array too large in CID font\n" ));
+        goto Fail_CID;
+      }
+
+      /* allocate & read each font dict independently */
+      font->num_subfonts = fd_index.count;
+      if ( FT_NEW_ARRAY( sub, fd_index.count ) )
+        goto Fail_CID;
+
+      /* set up pointer table */
+      for ( idx = 0; idx < fd_index.count; idx++ )
+        font->subfonts[idx] = sub + idx;
+
+      /* now load each subfont independently */
+      for ( idx = 0; idx < fd_index.count; idx++ )
+      {
+        sub = font->subfonts[idx];
+        FT_TRACE4(( "parsing subfont %u\n", idx ));
+        error = cff_subfont_load( sub,
+                                  &fd_index,
+                                  idx,
+                                  stream,
+                                  base_offset,
+                                  cff2 ? CFF2_CODE_FONTDICT
+                                       : CFF_CODE_TOPDICT,
+                                  font );
+>>>>>>> BRANCH (48a9a2 Merge "Use -Werror in external/freetype" am: 51036df35f)
         if ( error )
           goto Fail_CID;
       }

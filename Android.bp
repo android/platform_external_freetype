@@ -17,6 +17,7 @@ cc_library_shared {
         "src/base/ftfstype.c",
         "src/base/ftglyph.c",
         "src/base/ftlcdfil.c",
+<<<<<<< HEAD   (8c932b Necessary changes to build FreeType on Android)
         "src/base/ftstroke.c",
         "src/base/fttype1.c",
         "src/base/ftbase.c",
@@ -52,6 +53,41 @@ cc_library_shared {
 
         // Upstream ignores unused parameter warning
         "-Wno-unused-parameter",
+=======
+	"src/base/ftstroke.c",
+        "src/base/fttype1.c",
+        "src/base/ftbase.c",
+        "src/base/ftsystem.c",
+        "src/base/ftinit.c",
+        "src/base/ftgasp.c",
+        "src/base/ftmm.c",
+        "src/gzip/ftgzip.c",
+	"src/raster/raster.c",
+        "src/sfnt/sfnt.c",
+        "src/smooth/smooth.c",
+        "src/autofit/autofit.c",
+        "src/truetype/truetype.c",
+        "src/cff/cff.c",
+	"src/psnames/psnames.c",
+        "src/pshinter/pshinter.c",
+    ],
+
+    export_include_dirs: ["include"],
+
+    cflags: [
+        "-W",
+        "-Wall",
+        "-Werror",
+
+        "-fPIC",
+        "-DPIC",
+
+        "-DDARWIN_NO_CARBON",
+        "-DFT2_BUILD_LIBRARY",
+
+        "-O2",
+
+>>>>>>> BRANCH (48a9a2 Merge "Use -Werror in external/freetype" am: 51036df35f)
         // the following is for testing only, and should not be used in final
         // builds of the product
         // "-DTT_CONFIG_OPTION_BYTECODE_INTERPRETER",

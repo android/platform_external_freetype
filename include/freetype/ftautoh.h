@@ -477,6 +477,7 @@ FT_BEGIN_HEADER
    *   of emboldening versus the CFF driver.
    *
    *   This property can be set via the `FREETYPE_PROPERTIES' environment
+<<<<<<< HEAD   (8c932b Necessary changes to build FreeType on Android)
    *   variable similar to the CFF driver.  It can also be set per face
    *   using @FT_Face_Properties with @FT_PARAM_TAG_STEM_DARKENING.
    *
@@ -501,6 +502,11 @@ FT_BEGIN_HEADER
    */
 #define FT_PARAM_TAG_STEM_DARKENING \
           FT_MAKE_TAG( 'd', 'a', 'r', 'k' )
+=======
+   *   variable similar to the CFF driver.
+   *
+   */
+>>>>>>> BRANCH (48a9a2 Merge "Use -Werror in external/freetype" am: 51036df35f)
 
 
   /**************************************************************************

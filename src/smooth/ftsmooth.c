@@ -122,6 +122,7 @@
     FT_Bool  have_outline_shifted = FALSE;
     FT_Bool  have_buffer          = FALSE;
 
+<<<<<<< HEAD   (8c932b Necessary changes to build FreeType on Android)
 #ifdef FT_CONFIG_OPTION_SUBPIXEL_RENDERING
 
     FT_Int                   lcd_extra          = 0;
@@ -350,6 +351,187 @@
 
     if ( lcd_filter_func )
       lcd_filter_func( bitmap, mode, lcd_weights );
+=======
+
+    /* check glyph image format */
+    if ( slot->format != render->glyph_format )
+    {
+      error = FT_THROW( Invalid_Argument );
+      goto Exit;
+    }
+
+    /* check mode */
+    if ( mode != required_mode )
+    {
+      error = FT_THROW( Cannot_Render_Glyph );
+      goto Exit;
+    }
+
+    if ( origin )
+    {
+      x_shift = origin->x;
+      y_shift = origin->y;
+    }
+
+    /* compute the control box, and grid fit it */
+    /* taking into account the origin shift     */
+    FT_Outline_Get_CBox( outline, &cbox );
+
+    cbox.xMin = FT_PIX_FLOOR( cbox.xMin + x_shift );
+    cbox.yMin = FT_PIX_FLOOR( cbox.yMin + y_shift );
+    cbox.xMax = FT_PIX_CEIL( cbox.xMax + x_shift );
+    cbox.yMax = FT_PIX_CEIL( cbox.yMax + y_shift );
+
+    x_shift -= cbox.xMin;
+    y_shift -= cbox.yMin;
+
+    x_left  = cbox.xMin >> 6;
+    y_top   = cbox.yMax >> 6;
+
+    width  = (FT_ULong)( cbox.xMax - cbox.xMin ) >> 6;
+    height = (FT_ULong)( cbox.yMax - cbox.yMin ) >> 6;
+
+#ifndef FT_CONFIG_OPTION_SUBPIXEL_RENDERING
+    width_org  = width;
+    height_org = height;
+#endif
+
+    pitch = width;
+    if ( hmul )
+    {
+      width *= 3;
+      pitch  = FT_PAD_CEIL( width, 4 );
+    }
+
+    if ( vmul )
+      height *= 3;
+
+#ifdef FT_CONFIG_OPTION_SUBPIXEL_RENDERING
+
+    if ( slot->library->lcd_filter_func )
+    {
+      FT_Int  extra = slot->library->lcd_extra;
+
+
+      if ( hmul )
+      {
+        x_shift += 64 * ( extra >> 1 );
+        x_left  -= extra >> 1;
+        width   += 3 * extra;
+        pitch    = FT_PAD_CEIL( width, 4 );
+      }
+
+      if ( vmul )
+      {
+        y_shift += 64 * ( extra >> 1 );
+        y_top   += extra >> 1;
+        height  += 3 * extra;
+      }
+    }
+
+#endif
+
+    /*
+     * XXX: on 16bit system, we return an error for huge bitmap
+     * to prevent an overflow.
+     */
+    if ( x_left > FT_INT_MAX || y_top > FT_INT_MAX ||
+         x_left < FT_INT_MIN || y_top < FT_INT_MIN )
+    {
+      error = FT_THROW( Invalid_Pixel_Size );
+      goto Exit;
+    }
+
+    /* Required check is (pitch * height < FT_ULONG_MAX),        */
+    /* but we care realistic cases only.  Always pitch <= width. */
+    if ( width > 0x7FFF || height > 0x7FFF )
+    {
+      FT_ERROR(( "ft_smooth_render_generic: glyph too large: %u x %u\n",
+                 width, height ));
+      error = FT_THROW( Raster_Overflow );
+      goto Exit;
+    }
+
+    /* release old bitmap buffer */
+    if ( slot->internal->flags & FT_GLYPH_OWN_BITMAP )
+    {
+      FT_FREE( bitmap->buffer );
+      slot->internal->flags &= ~FT_GLYPH_OWN_BITMAP;
+    }
+
+    /* allocate new one */
+    if ( FT_ALLOC( bitmap->buffer, (FT_ULong)( pitch * height ) ) )
+      goto Exit;
+    else
+      have_buffer = TRUE;
+
+    slot->internal->flags |= FT_GLYPH_OWN_BITMAP;
+
+    slot->format      = FT_GLYPH_FORMAT_BITMAP;
+    slot->bitmap_left = (FT_Int)x_left;
+    slot->bitmap_top  = (FT_Int)y_top;
+
+    bitmap->pixel_mode = FT_PIXEL_MODE_GRAY;
+    bitmap->num_grays  = 256;
+    bitmap->width      = (unsigned int)width;
+    bitmap->rows       = (unsigned int)height;
+    bitmap->pitch      = pitch;
+
+    /* translate outline to render it into the bitmap */
+    if ( x_shift || y_shift )
+    {
+      FT_Outline_Translate( outline, x_shift, y_shift );
+      have_outline_shifted = TRUE;
+    }
+
+    /* set up parameters */
+    params.target = bitmap;
+    params.source = outline;
+    params.flags  = FT_RASTER_FLAG_AA;
+
+#ifdef FT_CONFIG_OPTION_SUBPIXEL_RENDERING
+
+    /* implode outline if needed */
+    {
+      FT_Vector*  points     = outline->points;
+      FT_Vector*  points_end = points + outline->n_points;
+      FT_Vector*  vec;
+
+
+      if ( hmul )
+        for ( vec = points; vec < points_end; vec++ )
+          vec->x *= 3;
+
+      if ( vmul )
+        for ( vec = points; vec < points_end; vec++ )
+          vec->y *= 3;
+    }
+
+    /* render outline into the bitmap */
+    error = render->raster_render( render->raster, &params );
+
+    /* deflate outline if needed */
+    {
+      FT_Vector*  points     = outline->points;
+      FT_Vector*  points_end = points + outline->n_points;
+      FT_Vector*  vec;
+
+
+      if ( hmul )
+        for ( vec = points; vec < points_end; vec++ )
+          vec->x /= 3;
+
+      if ( vmul )
+        for ( vec = points; vec < points_end; vec++ )
+          vec->y /= 3;
+    }
+
+    if ( error )
+      goto Exit;
+
+    if ( slot->library->lcd_filter_func )
+      slot->library->lcd_filter_func( bitmap, mode, slot->library );
+>>>>>>> BRANCH (48a9a2 Merge "Use -Werror in external/freetype" am: 51036df35f)
 
 #else /* !FT_CONFIG_OPTION_SUBPIXEL_RENDERING */
 

@@ -220,6 +220,7 @@
    *
    */
 
+<<<<<<< HEAD   (8c932b Necessary changes to build FreeType on Android)
   /* an array representing allowed ASCII characters in a PS string */
   static const unsigned char sfnt_ps_map[16] =
   {
@@ -648,6 +649,318 @@
 
     tt_face_get_name,       /* TT_Get_Name_Func        get_name        */
     sfnt_get_name_id        /* TT_Get_Name_ID_Func     get_name_id     */
+=======
+  static const char*
+  sfnt_get_ps_name( TT_Face  face )
+  {
+    FT_Int       n, found_win, found_apple;
+    const char*  result = NULL;
+
+
+    /* shouldn't happen, but just in case to avoid memory leaks */
+    if ( face->postscript_name )
+      return face->postscript_name;
+
+    /* scan the name table to see whether we have a Postscript name here, */
+    /* either in Macintosh or Windows platform encodings                  */
+    found_win   = -1;
+    found_apple = -1;
+
+    for ( n = 0; n < face->num_names; n++ )
+    {
+      TT_Name  name = face->name_table.names + n;
+
+
+      if ( name->nameID == 6 && name->stringLength > 0 )
+      {
+        /* handling of PID/EID 3/0 and 3/1 is the same */
+        if ( name->platformID == 3                              &&
+             ( name->encodingID == 1 || name->encodingID == 0 ) &&
+             name->languageID == 0x409                          )
+          found_win = n;
+
+        if ( name->platformID == 1 &&
+             name->encodingID == 0 &&
+             name->languageID == 0 )
+          found_apple = n;
+      }
+    }
+
+    if ( found_win != -1 )
+    {
+      FT_Memory  memory = face->root.memory;
+      TT_Name    name   = face->name_table.names + found_win;
+      FT_UInt    len    = name->stringLength / 2;
+      FT_Error   error  = FT_Err_Ok;
+
+      FT_UNUSED( error );
+
+
+      if ( !FT_ALLOC( result, name->stringLength + 1 ) )
+      {
+        FT_Stream   stream = face->name_table.stream;
+        FT_String*  r      = (FT_String*)result;
+        FT_Char*    p;
+
+
+        if ( FT_STREAM_SEEK( name->stringOffset ) ||
+             FT_FRAME_ENTER( name->stringLength ) )
+        {
+          FT_FREE( result );
+          name->stringLength = 0;
+          name->stringOffset = 0;
+          FT_FREE( name->string );
+
+          goto Exit;
+        }
+
+        p = (FT_Char*)stream->cursor;
+
+        for ( ; len > 0; len--, p += 2 )
+        {
+          if ( p[0] == 0 && p[1] >= 32 )
+            *r++ = p[1];
+        }
+        *r = '\0';
+
+        FT_FRAME_EXIT();
+      }
+      goto Exit;
+    }
+
+    if ( found_apple != -1 )
+    {
+      FT_Memory  memory = face->root.memory;
+      TT_Name    name   = face->name_table.names + found_apple;
+      FT_UInt    len    = name->stringLength;
+      FT_Error   error  = FT_Err_Ok;
+
+      FT_UNUSED( error );
+
+
+      if ( !FT_ALLOC( result, len + 1 ) )
+      {
+        FT_Stream  stream = face->name_table.stream;
+
+
+        if ( FT_STREAM_SEEK( name->stringOffset ) ||
+             FT_STREAM_READ( result, len )        )
+        {
+          name->stringOffset = 0;
+          name->stringLength = 0;
+          FT_FREE( name->string );
+          FT_FREE( result );
+          goto Exit;
+        }
+        ((char*)result)[len] = '\0';
+      }
+    }
+
+  Exit:
+    face->postscript_name = result;
+    return result;
+  }
+
+
+  FT_DEFINE_SERVICE_PSFONTNAMEREC(
+    sfnt_service_ps_name,
+
+    (FT_PsName_GetFunc)sfnt_get_ps_name       /* get_ps_font_name */
+  )
+
+
+  /*
+   *  TT CMAP INFO
+   */
+  FT_DEFINE_SERVICE_TTCMAPSREC(
+    tt_service_get_cmap_info,
+
+    (TT_CMap_Info_GetFunc)tt_get_cmap_info    /* get_cmap_info */
+  )
+
+
+#ifdef TT_CONFIG_OPTION_BDF
+
+  static FT_Error
+  sfnt_get_charset_id( TT_Face       face,
+                       const char*  *acharset_encoding,
+                       const char*  *acharset_registry )
+  {
+    BDF_PropertyRec  encoding, registry;
+    FT_Error         error;
+
+
+    /* XXX: I don't know whether this is correct, since
+     *      tt_face_find_bdf_prop only returns something correct if we have
+     *      previously selected a size that is listed in the BDF table.
+     *      Should we change the BDF table format to include single offsets
+     *      for `CHARSET_REGISTRY' and `CHARSET_ENCODING'?
+     */
+    error = tt_face_find_bdf_prop( face, "CHARSET_REGISTRY", &registry );
+    if ( !error )
+    {
+      error = tt_face_find_bdf_prop( face, "CHARSET_ENCODING", &encoding );
+      if ( !error )
+      {
+        if ( registry.type == BDF_PROPERTY_TYPE_ATOM &&
+             encoding.type == BDF_PROPERTY_TYPE_ATOM )
+        {
+          *acharset_encoding = encoding.u.atom;
+          *acharset_registry = registry.u.atom;
+        }
+        else
+          error = FT_THROW( Invalid_Argument );
+      }
+    }
+
+    return error;
+  }
+
+
+  FT_DEFINE_SERVICE_BDFRec(
+    sfnt_service_bdf,
+
+    (FT_BDF_GetCharsetIdFunc)sfnt_get_charset_id,     /* get_charset_id */
+    (FT_BDF_GetPropertyFunc) tt_face_find_bdf_prop    /* get_property   */
+  )
+
+
+#endif /* TT_CONFIG_OPTION_BDF */
+
+
+  /*
+   *  SERVICE LIST
+   */
+
+#if defined TT_CONFIG_OPTION_POSTSCRIPT_NAMES && defined TT_CONFIG_OPTION_BDF
+  FT_DEFINE_SERVICEDESCREC5(
+    sfnt_services,
+
+    FT_SERVICE_ID_SFNT_TABLE,           &SFNT_SERVICE_SFNT_TABLE_GET,
+    FT_SERVICE_ID_POSTSCRIPT_FONT_NAME, &SFNT_SERVICE_PS_NAME_GET,
+    FT_SERVICE_ID_GLYPH_DICT,           &SFNT_SERVICE_GLYPH_DICT_GET,
+    FT_SERVICE_ID_BDF,                  &SFNT_SERVICE_BDF_GET,
+    FT_SERVICE_ID_TT_CMAP,              &TT_SERVICE_CMAP_INFO_GET )
+#elif defined TT_CONFIG_OPTION_POSTSCRIPT_NAMES
+  FT_DEFINE_SERVICEDESCREC4(
+    sfnt_services,
+
+    FT_SERVICE_ID_SFNT_TABLE,           &SFNT_SERVICE_SFNT_TABLE_GET,
+    FT_SERVICE_ID_POSTSCRIPT_FONT_NAME, &SFNT_SERVICE_PS_NAME_GET,
+    FT_SERVICE_ID_GLYPH_DICT,           &SFNT_SERVICE_GLYPH_DICT_GET,
+    FT_SERVICE_ID_TT_CMAP,              &TT_SERVICE_CMAP_INFO_GET )
+#elif defined TT_CONFIG_OPTION_BDF
+  FT_DEFINE_SERVICEDESCREC4(
+    sfnt_services,
+
+    FT_SERVICE_ID_SFNT_TABLE,           &SFNT_SERVICE_SFNT_TABLE_GET,
+    FT_SERVICE_ID_POSTSCRIPT_FONT_NAME, &SFNT_SERVICE_PS_NAME_GET,
+    FT_SERVICE_ID_BDF,                  &SFNT_SERVICE_BDF_GET,
+    FT_SERVICE_ID_TT_CMAP,              &TT_SERVICE_CMAP_INFO_GET )
+#else
+  FT_DEFINE_SERVICEDESCREC3(
+    sfnt_services,
+
+    FT_SERVICE_ID_SFNT_TABLE,           &SFNT_SERVICE_SFNT_TABLE_GET,
+    FT_SERVICE_ID_POSTSCRIPT_FONT_NAME, &SFNT_SERVICE_PS_NAME_GET,
+    FT_SERVICE_ID_TT_CMAP,              &TT_SERVICE_CMAP_INFO_GET )
+#endif
+
+
+  FT_CALLBACK_DEF( FT_Module_Interface )
+  sfnt_get_interface( FT_Module    module,
+                      const char*  module_interface )
+  {
+    /* SFNT_SERVICES_GET dereferences `library' in PIC mode */
+#ifdef FT_CONFIG_OPTION_PIC
+    FT_Library  library;
+
+
+    if ( !module )
+      return NULL;
+    library = module->library;
+    if ( !library )
+      return NULL;
+#else
+    FT_UNUSED( module );
+#endif
+
+    return ft_service_list_lookup( SFNT_SERVICES_GET, module_interface );
+  }
+
+
+#ifdef TT_CONFIG_OPTION_EMBEDDED_BITMAPS
+#define PUT_EMBEDDED_BITMAPS( a )  a
+#else
+#define PUT_EMBEDDED_BITMAPS( a )  NULL
+#endif
+
+#ifdef TT_CONFIG_OPTION_POSTSCRIPT_NAMES
+#define PUT_PS_NAMES( a )  a
+#else
+#define PUT_PS_NAMES( a )  NULL
+#endif
+
+  FT_DEFINE_SFNT_INTERFACE(
+    sfnt_interface,
+
+    tt_face_goto_table,     /* TT_Loader_GotoTableFunc goto_table      */
+
+    sfnt_init_face,         /* TT_Init_Face_Func       init_face       */
+    sfnt_load_face,         /* TT_Load_Face_Func       load_face       */
+    sfnt_done_face,         /* TT_Done_Face_Func       done_face       */
+    sfnt_get_interface,     /* FT_Module_Requester     get_interface   */
+
+    tt_face_load_any,       /* TT_Load_Any_Func        load_any        */
+
+    tt_face_load_head,      /* TT_Load_Table_Func      load_head       */
+    tt_face_load_hhea,      /* TT_Load_Metrics_Func    load_hhea       */
+    tt_face_load_cmap,      /* TT_Load_Table_Func      load_cmap       */
+    tt_face_load_maxp,      /* TT_Load_Table_Func      load_maxp       */
+    tt_face_load_os2,       /* TT_Load_Table_Func      load_os2        */
+    tt_face_load_post,      /* TT_Load_Table_Func      load_post       */
+
+    tt_face_load_name,      /* TT_Load_Table_Func      load_name       */
+    tt_face_free_name,      /* TT_Free_Table_Func      free_name       */
+
+    tt_face_load_kern,      /* TT_Load_Table_Func      load_kern       */
+    tt_face_load_gasp,      /* TT_Load_Table_Func      load_gasp       */
+    tt_face_load_pclt,      /* TT_Load_Table_Func      load_init       */
+
+    /* see `ttload.h' */
+    PUT_EMBEDDED_BITMAPS( tt_face_load_bhed ),
+                            /* TT_Load_Table_Func      load_bhed       */
+    PUT_EMBEDDED_BITMAPS( tt_face_load_sbit_image ),
+                            /* TT_Load_SBit_Image_Func load_sbit_image */
+
+    /* see `ttpost.h' */
+    PUT_PS_NAMES( tt_face_get_ps_name   ),
+                            /* TT_Get_PS_Name_Func     get_psname      */
+    PUT_PS_NAMES( tt_face_free_ps_names ),
+                            /* TT_Free_Table_Func      free_psnames    */
+
+    /* since version 2.1.8 */
+    tt_face_get_kerning,    /* TT_Face_GetKerningFunc  get_kerning     */
+
+    /* since version 2.2 */
+    tt_face_load_font_dir,  /* TT_Load_Table_Func      load_font_dir   */
+    tt_face_load_hmtx,      /* TT_Load_Metrics_Func    load_hmtx       */
+
+    /* see `ttsbit.h' and `sfnt.h' */
+    PUT_EMBEDDED_BITMAPS( tt_face_load_sbit ),
+                            /* TT_Load_Table_Func      load_eblc       */
+    PUT_EMBEDDED_BITMAPS( tt_face_free_sbit ),
+                            /* TT_Free_Table_Func      free_eblc       */
+
+    PUT_EMBEDDED_BITMAPS( tt_face_set_sbit_strike     ),
+                            /* TT_Set_SBit_Strike_Func set_sbit_strike */
+    PUT_EMBEDDED_BITMAPS( tt_face_load_strike_metrics ),
+                    /* TT_Load_Strike_Metrics_Func load_strike_metrics */
+
+    tt_face_get_metrics,    /* TT_Get_Metrics_Func     get_metrics     */
+
+    tt_face_get_name        /* TT_Get_Name_Func        get_name        */
+>>>>>>> BRANCH (48a9a2 Merge "Use -Werror in external/freetype" am: 51036df35f)
   )
 
 

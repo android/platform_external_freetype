@@ -72,7 +72,10 @@ FT_BEGIN_HEADER
   (*FT_Get_Var_Blend_Func)( FT_Face      face,
                             FT_UInt     *num_coords,
                             FT_Fixed*   *coords,
+<<<<<<< HEAD   (8c932b Necessary changes to build FreeType on Android)
                             FT_Fixed*   *normalizedcoords,
+=======
+>>>>>>> BRANCH (48a9a2 Merge "Use -Werror in external/freetype" am: 51036df35f)
                             FT_MM_Var*  *mm_var );
 
   typedef void

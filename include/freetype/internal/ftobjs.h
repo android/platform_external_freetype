@@ -342,6 +342,7 @@ FT_BEGIN_HEADER
   /*      this data when first opened.  This field exists only if          */
   /*      @FT_CONFIG_OPTION_INCREMENTAL is defined.                        */
   /*                                                                       */
+<<<<<<< HEAD   (8c932b Necessary changes to build FreeType on Android)
   /*    no_stem_darkening ::                                               */
   /*      Overrides the module-level default, see @stem-darkening[cff],    */
   /*      for example.  FALSE and TRUE toggle stem darkening on and off,   */
@@ -907,6 +908,543 @@ FT_BEGIN_HEADER
     FT_LcdFilter             lcd_filter;
     FT_Int                   lcd_extra;        /* number of extra pixels */
     FT_LcdFiveTapFilter      lcd_weights;      /* filter weights, if any */
+=======
+  /*    refcount ::                                                        */
+  /*      A counter initialized to~1 at the time an @FT_Face structure is  */
+  /*      created.  @FT_Reference_Face increments this counter, and        */
+  /*      @FT_Done_Face only destroys a face if the counter is~1,          */
+  /*      otherwise it simply decrements it.                               */
+  /*                                                                       */
+  typedef struct  FT_Face_InternalRec_
+  {
+    FT_Matrix           transform_matrix;
+    FT_Vector           transform_delta;
+    FT_Int              transform_flags;
+
+    FT_ServiceCacheRec  services;
+
+#ifdef FT_CONFIG_OPTION_INCREMENTAL
+    FT_Incremental_InterfaceRec*  incremental_interface;
+#endif
+
+    FT_Int              refcount;
+
+  } FT_Face_InternalRec;
+
+
+  /*************************************************************************/
+  /*                                                                       */
+  /* <Struct>                                                              */
+  /*    FT_Slot_InternalRec                                                */
+  /*                                                                       */
+  /* <Description>                                                         */
+  /*    This structure contains the internal fields of each FT_GlyphSlot   */
+  /*    object.  These fields may change between different releases of     */
+  /*    FreeType.                                                          */
+  /*                                                                       */
+  /* <Fields>                                                              */
+  /*    loader            :: The glyph loader object used to load outlines */
+  /*                         into the glyph slot.                          */
+  /*                                                                       */
+  /*    flags             :: Possible values are zero or                   */
+  /*                         FT_GLYPH_OWN_BITMAP.  The latter indicates    */
+  /*                         that the FT_GlyphSlot structure owns the      */
+  /*                         bitmap buffer.                                */
+  /*                                                                       */
+  /*    glyph_transformed :: Boolean.  Set to TRUE when the loaded glyph   */
+  /*                         must be transformed through a specific        */
+  /*                         font transformation.  This is _not_ the same  */
+  /*                         as the face transform set through             */
+  /*                         FT_Set_Transform().                           */
+  /*                                                                       */
+  /*    glyph_matrix      :: The 2x2 matrix corresponding to the glyph     */
+  /*                         transformation, if necessary.                 */
+  /*                                                                       */
+  /*    glyph_delta       :: The 2d translation vector corresponding to    */
+  /*                         the glyph transformation, if necessary.       */
+  /*                                                                       */
+  /*    glyph_hints       :: Format-specific glyph hints management.       */
+  /*                                                                       */
+
+#define FT_GLYPH_OWN_BITMAP  0x1U
+
+  typedef struct  FT_Slot_InternalRec_
+  {
+    FT_GlyphLoader  loader;
+    FT_UInt         flags;
+    FT_Bool         glyph_transformed;
+    FT_Matrix       glyph_matrix;
+    FT_Vector       glyph_delta;
+    void*           glyph_hints;
+
+  } FT_GlyphSlot_InternalRec;
+
+
+#if 0
+
+  /*************************************************************************/
+  /*                                                                       */
+  /* <Struct>                                                              */
+  /*    FT_Size_InternalRec                                                */
+  /*                                                                       */
+  /* <Description>                                                         */
+  /*    This structure contains the internal fields of each FT_Size        */
+  /*    object.  Currently, it's empty.                                    */
+  /*                                                                       */
+  /*************************************************************************/
+
+  typedef struct  FT_Size_InternalRec_
+  {
+    /* empty */
+
+  } FT_Size_InternalRec;
+
+#endif
+
+
+  /*************************************************************************/
+  /*************************************************************************/
+  /*************************************************************************/
+  /****                                                                 ****/
+  /****                                                                 ****/
+  /****                         M O D U L E S                           ****/
+  /****                                                                 ****/
+  /****                                                                 ****/
+  /*************************************************************************/
+  /*************************************************************************/
+  /*************************************************************************/
+
+
+  /*************************************************************************/
+  /*                                                                       */
+  /* <Struct>                                                              */
+  /*    FT_ModuleRec                                                       */
+  /*                                                                       */
+  /* <Description>                                                         */
+  /*    A module object instance.                                          */
+  /*                                                                       */
+  /* <Fields>                                                              */
+  /*    clazz   :: A pointer to the module's class.                        */
+  /*                                                                       */
+  /*    library :: A handle to the parent library object.                  */
+  /*                                                                       */
+  /*    memory  :: A handle to the memory manager.                         */
+  /*                                                                       */
+  typedef struct  FT_ModuleRec_
+  {
+    FT_Module_Class*  clazz;
+    FT_Library        library;
+    FT_Memory         memory;
+
+  } FT_ModuleRec;
+
+
+  /* typecast an object to an FT_Module */
+#define FT_MODULE( x )          ((FT_Module)( x ))
+#define FT_MODULE_CLASS( x )    FT_MODULE( x )->clazz
+#define FT_MODULE_LIBRARY( x )  FT_MODULE( x )->library
+#define FT_MODULE_MEMORY( x )   FT_MODULE( x )->memory
+
+
+#define FT_MODULE_IS_DRIVER( x )  ( FT_MODULE_CLASS( x )->module_flags & \
+                                    FT_MODULE_FONT_DRIVER )
+
+#define FT_MODULE_IS_RENDERER( x )  ( FT_MODULE_CLASS( x )->module_flags & \
+                                      FT_MODULE_RENDERER )
+
+#define FT_MODULE_IS_HINTER( x )  ( FT_MODULE_CLASS( x )->module_flags & \
+                                    FT_MODULE_HINTER )
+
+#define FT_MODULE_IS_STYLER( x )  ( FT_MODULE_CLASS( x )->module_flags & \
+                                    FT_MODULE_STYLER )
+
+#define FT_DRIVER_IS_SCALABLE( x )  ( FT_MODULE_CLASS( x )->module_flags & \
+                                      FT_MODULE_DRIVER_SCALABLE )
+
+#define FT_DRIVER_USES_OUTLINES( x )  !( FT_MODULE_CLASS( x )->module_flags & \
+                                         FT_MODULE_DRIVER_NO_OUTLINES )
+
+#define FT_DRIVER_HAS_HINTER( x )  ( FT_MODULE_CLASS( x )->module_flags & \
+                                     FT_MODULE_DRIVER_HAS_HINTER )
+
+#define FT_DRIVER_HINTS_LIGHTLY( x )  ( FT_MODULE_CLASS( x )->module_flags & \
+                                        FT_MODULE_DRIVER_HINTS_LIGHTLY )
+
+
+  /*************************************************************************/
+  /*                                                                       */
+  /* <Function>                                                            */
+  /*    FT_Get_Module_Interface                                            */
+  /*                                                                       */
+  /* <Description>                                                         */
+  /*    Finds a module and returns its specific interface as a typeless    */
+  /*    pointer.                                                           */
+  /*                                                                       */
+  /* <Input>                                                               */
+  /*    library     :: A handle to the library object.                     */
+  /*                                                                       */
+  /*    module_name :: The module's name (as an ASCII string).             */
+  /*                                                                       */
+  /* <Return>                                                              */
+  /*    A module-specific interface if available, 0 otherwise.             */
+  /*                                                                       */
+  /* <Note>                                                                */
+  /*    You should better be familiar with FreeType internals to know      */
+  /*    which module to look for, and what its interface is :-)            */
+  /*                                                                       */
+  FT_BASE( const void* )
+  FT_Get_Module_Interface( FT_Library   library,
+                           const char*  mod_name );
+
+  FT_BASE( FT_Pointer )
+  ft_module_get_service( FT_Module    module,
+                         const char*  service_id,
+                         FT_Bool      global );
+
+#ifdef FT_CONFIG_OPTION_ENVIRONMENT_PROPERTIES
+  FT_BASE( FT_Error )
+  ft_property_string_set( FT_Library        library,
+                          const FT_String*  module_name,
+                          const FT_String*  property_name,
+                          FT_String*        value );
+#endif
+
+  /* */
+
+
+  /*************************************************************************/
+  /*************************************************************************/
+  /*************************************************************************/
+  /****                                                                 ****/
+  /****                                                                 ****/
+  /****   F A C E,   S I Z E   &   G L Y P H   S L O T   O B J E C T S  ****/
+  /****                                                                 ****/
+  /****                                                                 ****/
+  /*************************************************************************/
+  /*************************************************************************/
+  /*************************************************************************/
+
+  /* a few macros used to perform easy typecasts with minimal brain damage */
+
+#define FT_FACE( x )          ((FT_Face)(x))
+#define FT_SIZE( x )          ((FT_Size)(x))
+#define FT_SLOT( x )          ((FT_GlyphSlot)(x))
+
+#define FT_FACE_DRIVER( x )   FT_FACE( x )->driver
+#define FT_FACE_LIBRARY( x )  FT_FACE_DRIVER( x )->root.library
+#define FT_FACE_MEMORY( x )   FT_FACE( x )->memory
+#define FT_FACE_STREAM( x )   FT_FACE( x )->stream
+
+#define FT_SIZE_FACE( x )     FT_SIZE( x )->face
+#define FT_SLOT_FACE( x )     FT_SLOT( x )->face
+
+#define FT_FACE_SLOT( x )     FT_FACE( x )->glyph
+#define FT_FACE_SIZE( x )     FT_FACE( x )->size
+
+
+  /*************************************************************************/
+  /*                                                                       */
+  /* <Function>                                                            */
+  /*    FT_New_GlyphSlot                                                   */
+  /*                                                                       */
+  /* <Description>                                                         */
+  /*    It is sometimes useful to have more than one glyph slot for a      */
+  /*    given face object.  This function is used to create additional     */
+  /*    slots.  All of them are automatically discarded when the face is   */
+  /*    destroyed.                                                         */
+  /*                                                                       */
+  /* <Input>                                                               */
+  /*    face  :: A handle to a parent face object.                         */
+  /*                                                                       */
+  /* <Output>                                                              */
+  /*    aslot :: A handle to a new glyph slot object.                      */
+  /*                                                                       */
+  /* <Return>                                                              */
+  /*    FreeType error code.  0 means success.                             */
+  /*                                                                       */
+  FT_BASE( FT_Error )
+  FT_New_GlyphSlot( FT_Face        face,
+                    FT_GlyphSlot  *aslot );
+
+
+  /*************************************************************************/
+  /*                                                                       */
+  /* <Function>                                                            */
+  /*    FT_Done_GlyphSlot                                                  */
+  /*                                                                       */
+  /* <Description>                                                         */
+  /*    Destroys a given glyph slot.  Remember however that all slots are  */
+  /*    automatically destroyed with its parent.  Using this function is   */
+  /*    not always mandatory.                                              */
+  /*                                                                       */
+  /* <Input>                                                               */
+  /*    slot :: A handle to a target glyph slot.                           */
+  /*                                                                       */
+  FT_BASE( void )
+  FT_Done_GlyphSlot( FT_GlyphSlot  slot );
+
+ /* */
+
+#define FT_REQUEST_WIDTH( req )                                            \
+          ( (req)->horiResolution                                          \
+              ? ( (req)->width * (FT_Pos)(req)->horiResolution + 36 ) / 72 \
+              : (req)->width )
+
+#define FT_REQUEST_HEIGHT( req )                                            \
+          ( (req)->vertResolution                                           \
+              ? ( (req)->height * (FT_Pos)(req)->vertResolution + 36 ) / 72 \
+              : (req)->height )
+
+
+  /* Set the metrics according to a bitmap strike. */
+  FT_BASE( void )
+  FT_Select_Metrics( FT_Face   face,
+                     FT_ULong  strike_index );
+
+
+  /* Set the metrics according to a size request. */
+  FT_BASE( void )
+  FT_Request_Metrics( FT_Face          face,
+                      FT_Size_Request  req );
+
+
+  /* Match a size request against `available_sizes'. */
+  FT_BASE( FT_Error )
+  FT_Match_Size( FT_Face          face,
+                 FT_Size_Request  req,
+                 FT_Bool          ignore_width,
+                 FT_ULong*        size_index );
+
+
+  /* Use the horizontal metrics to synthesize the vertical metrics. */
+  /* If `advance' is zero, it is also synthesized.                  */
+  FT_BASE( void )
+  ft_synthesize_vertical_metrics( FT_Glyph_Metrics*  metrics,
+                                  FT_Pos             advance );
+
+
+  /* Free the bitmap of a given glyphslot when needed (i.e., only when it */
+  /* was allocated with ft_glyphslot_alloc_bitmap).                       */
+  FT_BASE( void )
+  ft_glyphslot_free_bitmap( FT_GlyphSlot  slot );
+
+
+  /* Allocate a new bitmap buffer in a glyph slot. */
+  FT_BASE( FT_Error )
+  ft_glyphslot_alloc_bitmap( FT_GlyphSlot  slot,
+                             FT_ULong      size );
+
+
+  /* Set the bitmap buffer in a glyph slot to a given pointer.  The buffer */
+  /* will not be freed by a later call to ft_glyphslot_free_bitmap.        */
+  FT_BASE( void )
+  ft_glyphslot_set_bitmap( FT_GlyphSlot  slot,
+                           FT_Byte*      buffer );
+
+
+  /*************************************************************************/
+  /*************************************************************************/
+  /*************************************************************************/
+  /****                                                                 ****/
+  /****                                                                 ****/
+  /****                        R E N D E R E R S                        ****/
+  /****                                                                 ****/
+  /****                                                                 ****/
+  /*************************************************************************/
+  /*************************************************************************/
+  /*************************************************************************/
+
+
+#define FT_RENDERER( x )      ((FT_Renderer)( x ))
+#define FT_GLYPH( x )         ((FT_Glyph)( x ))
+#define FT_BITMAP_GLYPH( x )  ((FT_BitmapGlyph)( x ))
+#define FT_OUTLINE_GLYPH( x ) ((FT_OutlineGlyph)( x ))
+
+
+  typedef struct  FT_RendererRec_
+  {
+    FT_ModuleRec            root;
+    FT_Renderer_Class*      clazz;
+    FT_Glyph_Format         glyph_format;
+    FT_Glyph_Class          glyph_class;
+
+    FT_Raster               raster;
+    FT_Raster_Render_Func   raster_render;
+    FT_Renderer_RenderFunc  render;
+
+  } FT_RendererRec;
+
+
+  /*************************************************************************/
+  /*************************************************************************/
+  /*************************************************************************/
+  /****                                                                 ****/
+  /****                                                                 ****/
+  /****                    F O N T   D R I V E R S                      ****/
+  /****                                                                 ****/
+  /****                                                                 ****/
+  /*************************************************************************/
+  /*************************************************************************/
+  /*************************************************************************/
+
+
+  /* typecast a module into a driver easily */
+#define FT_DRIVER( x )        ((FT_Driver)(x))
+
+  /* typecast a module as a driver, and get its driver class */
+#define FT_DRIVER_CLASS( x )  FT_DRIVER( x )->clazz
+
+
+  /*************************************************************************/
+  /*                                                                       */
+  /* <Struct>                                                              */
+  /*    FT_DriverRec                                                       */
+  /*                                                                       */
+  /* <Description>                                                         */
+  /*    The root font driver class.  A font driver is responsible for      */
+  /*    managing and loading font files of a given format.                 */
+  /*                                                                       */
+  /*  <Fields>                                                             */
+  /*     root         :: Contains the fields of the root module class.     */
+  /*                                                                       */
+  /*     clazz        :: A pointer to the font driver's class.  Note that  */
+  /*                     this is NOT root.clazz.  `class' wasn't used      */
+  /*                     as it is a reserved word in C++.                  */
+  /*                                                                       */
+  /*     faces_list   :: The list of faces currently opened by this        */
+  /*                     driver.                                           */
+  /*                                                                       */
+  /*     glyph_loader :: Unused.  Used to be glyph loader for all faces    */
+  /*                     managed by this driver.                           */
+  /*                                                                       */
+  typedef struct  FT_DriverRec_
+  {
+    FT_ModuleRec     root;
+    FT_Driver_Class  clazz;
+    FT_ListRec       faces_list;
+    FT_GlyphLoader   glyph_loader;
+
+  } FT_DriverRec;
+
+
+  /*************************************************************************/
+  /*************************************************************************/
+  /*************************************************************************/
+  /****                                                                 ****/
+  /****                                                                 ****/
+  /****                       L I B R A R I E S                         ****/
+  /****                                                                 ****/
+  /****                                                                 ****/
+  /*************************************************************************/
+  /*************************************************************************/
+  /*************************************************************************/
+
+
+  /* This hook is used by the TrueType debugger.  It must be set to an */
+  /* alternate truetype bytecode interpreter function.                 */
+#define FT_DEBUG_HOOK_TRUETYPE            0
+
+
+  typedef void  (*FT_Bitmap_LcdFilterFunc)( FT_Bitmap*      bitmap,
+                                            FT_Render_Mode  render_mode,
+                                            FT_Library      library );
+
+
+  /*************************************************************************/
+  /*                                                                       */
+  /* <Struct>                                                              */
+  /*    FT_LibraryRec                                                      */
+  /*                                                                       */
+  /* <Description>                                                         */
+  /*    The FreeType library class.  This is the root of all FreeType      */
+  /*    data.  Use FT_New_Library() to create a library object, and        */
+  /*    FT_Done_Library() to discard it and all child objects.             */
+  /*                                                                       */
+  /* <Fields>                                                              */
+  /*    memory           :: The library's memory object.  Manages memory   */
+  /*                        allocation.                                    */
+  /*                                                                       */
+  /*    version_major    :: The major version number of the library.       */
+  /*                                                                       */
+  /*    version_minor    :: The minor version number of the library.       */
+  /*                                                                       */
+  /*    version_patch    :: The current patch level of the library.        */
+  /*                                                                       */
+  /*    num_modules      :: The number of modules currently registered     */
+  /*                        within this library.  This is set to 0 for new */
+  /*                        libraries.  New modules are added through the  */
+  /*                        FT_Add_Module() API function.                  */
+  /*                                                                       */
+  /*    modules          :: A table used to store handles to the currently */
+  /*                        registered modules. Note that each font driver */
+  /*                        contains a list of its opened faces.           */
+  /*                                                                       */
+  /*    renderers        :: The list of renderers currently registered     */
+  /*                        within the library.                            */
+  /*                                                                       */
+  /*    cur_renderer     :: The current outline renderer.  This is a       */
+  /*                        shortcut used to avoid parsing the list on     */
+  /*                        each call to FT_Outline_Render().  It is a     */
+  /*                        handle to the current renderer for the         */
+  /*                        FT_GLYPH_FORMAT_OUTLINE format.                */
+  /*                                                                       */
+  /*    auto_hinter      :: XXX                                            */
+  /*                                                                       */
+  /*    raster_pool      :: The raster object's render pool.  This can     */
+  /*                        ideally be changed dynamically at run-time.    */
+  /*                                                                       */
+  /*    raster_pool_size :: The size of the render pool in bytes.          */
+  /*                                                                       */
+  /*    debug_hooks      :: XXX                                            */
+  /*                                                                       */
+  /*    lcd_filter       :: If subpixel rendering is activated, the        */
+  /*                        selected LCD filter mode.                      */
+  /*                                                                       */
+  /*    lcd_extra        :: If subpixel rendering is activated, the number */
+  /*                        of extra pixels needed for the LCD filter.     */
+  /*                                                                       */
+  /*    lcd_weights      :: If subpixel rendering is activated, the LCD    */
+  /*                        filter weights, if any.                        */
+  /*                                                                       */
+  /*    lcd_filter_func  :: If subpixel rendering is activated, the LCD    */
+  /*                        filtering callback function.                   */
+  /*                                                                       */
+  /*    pic_container    :: Contains global structs and tables, instead    */
+  /*                        of defining them globally.                     */
+  /*                                                                       */
+  /*    refcount         :: A counter initialized to~1 at the time an      */
+  /*                        @FT_Library structure is created.              */
+  /*                        @FT_Reference_Library increments this counter, */
+  /*                        and @FT_Done_Library only destroys a library   */
+  /*                        if the counter is~1, otherwise it simply       */
+  /*                        decrements it.                                 */
+  /*                                                                       */
+  typedef struct  FT_LibraryRec_
+  {
+    FT_Memory          memory;           /* library's memory manager */
+
+    FT_Int             version_major;
+    FT_Int             version_minor;
+    FT_Int             version_patch;
+
+    FT_UInt            num_modules;
+    FT_Module          modules[FT_MAX_MODULES];  /* module objects  */
+
+    FT_ListRec         renderers;        /* list of renderers        */
+    FT_Renderer        cur_renderer;     /* current outline renderer */
+    FT_Module          auto_hinter;
+
+    FT_Byte*           raster_pool;      /* scan-line conversion */
+                                         /* render pool          */
+    FT_ULong           raster_pool_size; /* size of render pool in bytes */
+
+    FT_DebugHook_Func  debug_hooks[4];
+
+#ifdef FT_CONFIG_OPTION_SUBPIXEL_RENDERING
+    FT_LcdFilter             lcd_filter;
+    FT_Int                   lcd_extra;        /* number of extra pixels */
+    FT_Byte                  lcd_weights[5];   /* filter weights, if any */
+>>>>>>> BRANCH (48a9a2 Merge "Use -Werror in external/freetype" am: 51036df35f)
     FT_Bitmap_LcdFilterFunc  lcd_filter_func;  /* filtering callback     */
 #endif
 

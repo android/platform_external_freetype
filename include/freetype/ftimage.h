@@ -619,7 +619,11 @@ FT_BEGIN_HEADER
   /*                                                                       */
   /*    {                                                                  */
   /*      x' = (x << shift) - delta                                        */
+<<<<<<< HEAD   (8c932b Necessary changes to build FreeType on Android)
   /*      y' = (y << shift) - delta                                        */
+=======
+  /*      y' = (x << shift) - delta                                        */
+>>>>>>> BRANCH (48a9a2 Merge "Use -Werror in external/freetype" am: 51036df35f)
   /*    }                                                                  */
   /*                                                                       */
   /*    Set the values of `shift' and `delta' to~0 to get the original     */

@@ -9,6 +9,7 @@
  *  FreeType without GNU make.
  *
  */
+<<<<<<< HEAD   (8c932b Necessary changes to build FreeType on Android)
 // ANDROID: commented out ones are not needed for android, previously they were deleted
 FT_USE_MODULE( FT_Module_Class, autofit_module_class )
 FT_USE_MODULE( FT_Driver_ClassRec, tt_driver_class )
@@ -28,5 +29,18 @@ FT_USE_MODULE( FT_Renderer_Class, ft_smooth_renderer_class )
 FT_USE_MODULE( FT_Renderer_Class, ft_smooth_lcd_renderer_class )
 FT_USE_MODULE( FT_Renderer_Class, ft_smooth_lcdv_renderer_class )
 //FT_USE_MODULE( FT_Driver_ClassRec, bdf_driver_class )
+=======
+
+FT_USE_MODULE( FT_Module_Class, autofit_module_class )
+FT_USE_MODULE( FT_Driver_ClassRec, tt_driver_class )
+FT_USE_MODULE( FT_Driver_ClassRec, cff_driver_class )
+FT_USE_MODULE( FT_Module_Class, psnames_module_class )
+FT_USE_MODULE( FT_Module_Class, pshinter_module_class )
+FT_USE_MODULE( FT_Renderer_Class, ft_raster1_renderer_class )
+FT_USE_MODULE( FT_Module_Class, sfnt_module_class )
+FT_USE_MODULE( FT_Renderer_Class, ft_smooth_renderer_class )
+FT_USE_MODULE( FT_Renderer_Class, ft_smooth_lcd_renderer_class )
+FT_USE_MODULE( FT_Renderer_Class, ft_smooth_lcdv_renderer_class )
+>>>>>>> BRANCH (48a9a2 Merge "Use -Werror in external/freetype" am: 51036df35f)
 
 /* EOF */

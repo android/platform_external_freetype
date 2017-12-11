@@ -113,6 +113,7 @@ FT_BEGIN_HEADER
    *   hinting-engine[cff]
    *   no-stem-darkening[cff]
    *   darkening-parameters[cff]
+<<<<<<< HEAD   (8c932b Necessary changes to build FreeType on Android)
    *   random-seed
    *
    */
@@ -307,6 +308,157 @@ FT_BEGIN_HEADER
 #define FT_PARAM_TAG_RANDOM_SEED \
           FT_MAKE_TAG( 's', 'e', 'e', 'd' )
 
+=======
+   *
+   */
+
+
+  /**************************************************************************
+   *
+   * @property:
+   *   hinting-engine[cff]
+   *
+   * @description:
+   *   Thanks to Adobe, which contributed a new hinting (and parsing)
+   *   engine, an application can select between `freetype' and `adobe' if
+   *   compiled with CFF_CONFIG_OPTION_OLD_ENGINE.  If this configuration
+   *   macro isn't defined, `hinting-engine' does nothing.
+   *
+   *   The default engine is `freetype' if CFF_CONFIG_OPTION_OLD_ENGINE is
+   *   defined, and `adobe' otherwise.
+   *
+   *   The following example code demonstrates how to select Adobe's hinting
+   *   engine (omitting the error handling).
+   *
+   *   {
+   *     FT_Library  library;
+   *     FT_UInt     hinting_engine = FT_CFF_HINTING_ADOBE;
+   *
+   *
+   *     FT_Init_FreeType( &library );
+   *
+   *     FT_Property_Set( library, "cff",
+   *                               "hinting-engine", &hinting_engine );
+   *   }
+   *
+   * @note:
+   *   This property can be used with @FT_Property_Get also.
+   *
+   *   This property can be set via the `FREETYPE_PROPERTIES' environment
+   *   variable (using values `adobe' or `freetype').
+   */
+
+
+  /**************************************************************************
+   *
+   * @enum:
+   *   FT_CFF_HINTING_XXX
+   *
+   * @description:
+   *   A list of constants used for the @hinting-engine[cff] property to
+   *   select the hinting engine for CFF fonts.
+   *
+   * @values:
+   *   FT_CFF_HINTING_FREETYPE ::
+   *     Use the old FreeType hinting engine.
+   *
+   *   FT_CFF_HINTING_ADOBE ::
+   *     Use the hinting engine contributed by Adobe.
+   *
+   */
+#define FT_CFF_HINTING_FREETYPE  0
+#define FT_CFF_HINTING_ADOBE     1
+
+
+  /**************************************************************************
+   *
+   * @property:
+   *   no-stem-darkening[cff]
+   *
+   * @description:
+   *   By default, the Adobe CFF engine darkens stems at smaller sizes,
+   *   regardless of hinting, to enhance contrast.  This feature requires
+   *   a rendering system with proper gamma correction.  Setting this
+   *   property, stem darkening gets switched off.
+   *
+   *   Note that stem darkening is never applied if @FT_LOAD_NO_SCALE is set.
+   *
+   *   {
+   *     FT_Library  library;
+   *     FT_Bool     no_stem_darkening = TRUE;
+   *
+   *
+   *     FT_Init_FreeType( &library );
+   *
+   *     FT_Property_Set( library, "cff",
+   *                               "no-stem-darkening", &no_stem_darkening );
+   *   }
+   *
+   * @note:
+   *   This property can be used with @FT_Property_Get also.
+   *
+   *   This property can be set via the `FREETYPE_PROPERTIES' environment
+   *   variable (using values 1 and 0 for `on' and `off', respectively).
+   *
+   */
+
+
+  /**************************************************************************
+   *
+   * @property:
+   *   darkening-parameters[cff]
+   *
+   * @description:
+   *   By default, the Adobe CFF engine darkens stems as follows (if the
+   *   `no-stem-darkening' property isn't set):
+   *
+   *   {
+   *     stem width <= 0.5px:   darkening amount = 0.4px
+   *     stem width  = 1px:     darkening amount = 0.275px
+   *     stem width  = 1.667px: darkening amount = 0.275px
+   *     stem width >= 2.333px: darkening amount = 0px
+   *   }
+   *
+   *   and piecewise linear in-between.  At configuration time, these four
+   *   control points can be set with the macro
+   *   `CFF_CONFIG_OPTION_DARKENING_PARAMETERS'.  At runtime, the control
+   *   points can be changed using the `darkening-parameters' property, as
+   *   the following example demonstrates.
+   *
+   *   {
+   *     FT_Library  library;
+   *     FT_Int      darken_params[8] = {  500, 300,   // x1, y1
+   *                                      1000, 200,   // x2, y2
+   *                                      1500, 100,   // x3, y3
+   *                                      2000,   0 }; // x4, y4
+   *
+   *
+   *     FT_Init_FreeType( &library );
+   *
+   *     FT_Property_Set( library, "cff",
+   *                               "darkening-parameters", darken_params );
+   *   }
+   *
+   *   The x~values give the stem width, and the y~values the darkening
+   *   amount.  The unit is 1000th of pixels.  All coordinate values must be
+   *   positive; the x~values must be monotonically increasing; the
+   *   y~values must be monotonically decreasing and smaller than or
+   *   equal to 500 (corresponding to half a pixel); the slope of each
+   *   linear piece must be shallower than -1 (e.g., -.4).
+   *
+   * @note:
+   *   This property can be used with @FT_Property_Get also.
+   *
+   *   This property can be set via the `FREETYPE_PROPERTIES' environment
+   *   variable, using eight comma-separated integers without spaces.  Here
+   *   the above example, using `\' to break the line for readability.
+   *
+   *   {
+   *     FREETYPE_PROPERTIES=\
+   *     cff:darkening-parameters=500,300,1000,200,1500,100,2000,0
+   *   }
+   */
+>>>>>>> BRANCH (48a9a2 Merge "Use -Werror in external/freetype" am: 51036df35f)
 
   /* */
 

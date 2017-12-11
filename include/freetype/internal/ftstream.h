@@ -502,7 +502,11 @@ FT_BEGIN_HEADER
 #define FT_STREAM_READ_AT( position, buffer, count )            \
           FT_SET_ERROR( FT_Stream_ReadAt( stream,               \
                                           (FT_ULong)(position), \
+<<<<<<< HEAD   (8c932b Necessary changes to build FreeType on Android)
                                           (FT_Byte*)(buffer),   \
+=======
+                                          (FT_Byte*)buffer,     \
+>>>>>>> BRANCH (48a9a2 Merge "Use -Werror in external/freetype" am: 51036df35f)
                                           (FT_ULong)(count) ) )
 
 #define FT_STREAM_READ_FIELDS( fields, object )                          \

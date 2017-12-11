@@ -340,6 +340,7 @@
       CFF_Builder*  builder = &decoder->builder;
       CFF_Driver    driver  = (CFF_Driver)FT_FACE_DRIVER( builder->face );
 
+<<<<<<< HEAD   (8c932b Necessary changes to build FreeType on Android)
       FT_Bool  no_stem_darkening_driver =
                  driver->no_stem_darkening;
       FT_Char  no_stem_darkening_font =
@@ -458,6 +459,119 @@
     FT_ASSERT( vec && len );
 
     return cff_get_var_blend( decoder->builder.face, len, NULL, vec, NULL );
+=======
+      /* local error */
+      FT_Error       error2 = FT_Err_Ok;
+      CF2_BufferRec  buf;
+      CF2_Matrix     transform;
+      CF2_F16Dot16   glyphWidth;
+
+      FT_Bool  hinted;
+      FT_Bool  scaled;
+
+
+      /* FreeType has already looked up the GID; convert to         */
+      /* `RegionBuffer', assuming that the input has been validated */
+      FT_ASSERT( charstring_base + charstring_len >= charstring_base );
+
+      FT_ZERO( &buf );
+      buf.start =
+      buf.ptr   = charstring_base;
+      buf.end   = charstring_base + charstring_len;
+
+      FT_ZERO( &transform );
+
+      cf2_getScaleAndHintFlag( decoder,
+                               &transform.a,
+                               &transform.d,
+                               &hinted,
+                               &scaled );
+
+      /* copy isCFF2 boolean from TT_Face to CF2_Font */
+      font->isCFF2 = builder->face->isCFF2;
+
+      font->renderingFlags = 0;
+      if ( hinted )
+        font->renderingFlags |= CF2_FlagsHinted;
+      if ( scaled && !driver->no_stem_darkening )
+        font->renderingFlags |= CF2_FlagsDarkened;
+
+      font->darkenParams[0] = driver->darken_params[0];
+      font->darkenParams[1] = driver->darken_params[1];
+      font->darkenParams[2] = driver->darken_params[2];
+      font->darkenParams[3] = driver->darken_params[3];
+      font->darkenParams[4] = driver->darken_params[4];
+      font->darkenParams[5] = driver->darken_params[5];
+      font->darkenParams[6] = driver->darken_params[6];
+      font->darkenParams[7] = driver->darken_params[7];
+
+      /* now get an outline for this glyph;      */
+      /* also get units per em to validate scale */
+      font->unitsPerEm = (CF2_Int)cf2_getUnitsPerEm( decoder );
+
+      if ( scaled )
+      {
+        error2 = cf2_checkTransform( &transform, font->unitsPerEm );
+        if ( error2 )
+          return error2;
+      }
+
+      error2 = cf2_getGlyphOutline( font, &buf, &transform, &glyphWidth );
+      if ( error2 )
+        return FT_ERR( Invalid_File_Format );
+
+      cf2_setGlyphWidth( &font->outline, glyphWidth );
+
+      return FT_Err_Ok;
+    }
+  }
+
+
+  /* get pointer to current FreeType subfont (based on current glyphID) */
+  FT_LOCAL_DEF( CFF_SubFont )
+  cf2_getSubfont( CFF_Decoder*  decoder )
+  {
+    FT_ASSERT( decoder && decoder->current_subfont );
+
+    return decoder->current_subfont;
+  }
+
+
+  /* get pointer to VStore structure */
+  FT_LOCAL_DEF( CFF_VStore )
+  cf2_getVStore( CFF_Decoder*  decoder )
+  {
+    FT_ASSERT( decoder && decoder->cff );
+
+    return &decoder->cff->vstore;
+  }
+
+
+  /* get maxstack value from CFF2 Top DICT */
+  FT_LOCAL_DEF( FT_UInt )
+  cf2_getMaxstack( CFF_Decoder*  decoder )
+  {
+    FT_ASSERT( decoder && decoder->cff );
+
+    return decoder->cff->top_font.font_dict.maxstack;
+  }
+
+
+#ifdef TT_CONFIG_OPTION_GX_VAR_SUPPORT
+  /* Get normalized design vector for current render request; */
+  /* return pointer and length.                               */
+  /*                                                          */
+  /* Note: Uses FT_Fixed not CF2_Fixed for the vector.        */
+  FT_LOCAL_DEF( FT_Error )
+  cf2_getNormalizedVector( CFF_Decoder*  decoder,
+                           CF2_UInt     *len,
+                           FT_Fixed*    *vec )
+  {
+    FT_ASSERT( decoder && decoder->builder.face );
+    FT_ASSERT( vec && len );
+
+    return cff_get_var_blend( decoder->builder.face, len, vec, NULL );
+>>>>>>> BRANCH (48a9a2 Merge "Use -Werror in external/freetype" am: 51036df35f)
   }
 #endif
 

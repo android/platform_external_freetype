@@ -833,6 +833,7 @@
       {
         FT_UInt*  hinting_engine = (FT_UInt*)value;
 
+<<<<<<< HEAD   (8c932b Necessary changes to build FreeType on Android)
 
         if ( *hinting_engine == FT_CFF_HINTING_ADOBE
 #ifdef CFF_CONFIG_OPTION_OLD_ENGINE
@@ -892,6 +893,44 @@
         random_seed = 0;
 
       driver->random_seed = random_seed;
+=======
+        if ( *hinting_engine == FT_CFF_HINTING_ADOBE
+#ifdef CFF_CONFIG_OPTION_OLD_ENGINE
+             || *hinting_engine == FT_CFF_HINTING_FREETYPE
+#endif
+           )
+          driver->hinting_engine = *hinting_engine;
+        else
+          error = FT_ERR( Unimplemented_Feature );
+
+        return error;
+      }
+    }
+    else if ( !ft_strcmp( property_name, "no-stem-darkening" ) )
+    {
+#ifdef FT_CONFIG_OPTION_ENVIRONMENT_PROPERTIES
+      if ( value_is_string )
+      {
+        const char*  s   = (const char*)value;
+        long         nsd = ft_strtol( s, NULL, 10 );
+
+
+        if ( nsd == 0 )
+          driver->no_stem_darkening = 0;
+        else if ( nsd == 1 )
+          driver->no_stem_darkening = 1;
+        else
+          return FT_THROW( Invalid_Argument );
+      }
+      else
+#endif
+      {
+        FT_Bool*  no_stem_darkening = (FT_Bool*)value;
+
+
+        driver->no_stem_darkening = *no_stem_darkening;
+      }
+>>>>>>> BRANCH (48a9a2 Merge "Use -Werror in external/freetype" am: 51036df35f)
 
       return error;
     }

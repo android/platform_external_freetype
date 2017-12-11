@@ -61,6 +61,7 @@ FT_BEGIN_HEADER
                              FT_UInt      cid );
 
 
+<<<<<<< HEAD   (8c932b Necessary changes to build FreeType on Android)
   FT_LOCAL( FT_UInt32 )
   cff_random( FT_UInt32  r );
 
@@ -113,6 +114,55 @@ FT_BEGIN_HEADER
                      FT_UInt     *num_coords,
                      FT_Fixed*   *coords,
                      FT_Fixed*   *normalizedcoords,
+=======
+  FT_LOCAL( FT_Error )
+  cff_font_load( FT_Library  library,
+                 FT_Stream   stream,
+                 FT_Int      face_index,
+                 CFF_Font    font,
+                 FT_Bool     pure_cff,
+                 FT_Bool     cff2 );
+
+  FT_LOCAL( void )
+  cff_font_done( CFF_Font  font );
+
+
+  FT_LOCAL( FT_Error )
+  cff_load_private_dict( CFF_Font     font,
+                         CFF_SubFont  subfont,
+                         FT_UInt      lenNDV,
+                         FT_Fixed*    NDV );
+
+  FT_LOCAL( FT_Byte )
+  cff_fd_select_get( CFF_FDSelect  fdselect,
+                     FT_UInt       glyph_index );
+
+  FT_LOCAL( FT_Bool )
+  cff_blend_check_vector( CFF_Blend  blend,
+                          FT_UInt    vsindex,
+                          FT_UInt    lenNDV,
+                          FT_Fixed*  NDV );
+
+  FT_LOCAL( FT_Error )
+  cff_blend_build_vector( CFF_Blend  blend,
+                          FT_UInt    vsindex,
+                          FT_UInt    lenNDV,
+                          FT_Fixed*  NDV );
+
+  FT_LOCAL( void )
+  cff_blend_clear( CFF_SubFont  subFont );
+
+  FT_LOCAL( FT_Error )
+  cff_blend_doBlend( CFF_SubFont  subfont,
+                     CFF_Parser   parser,
+                     FT_UInt      numBlends );
+
+#ifdef TT_CONFIG_OPTION_GX_VAR_SUPPORT
+  FT_LOCAL( FT_Error )
+  cff_get_var_blend( CFF_Face     face,
+                     FT_UInt     *num_coords,
+                     FT_Fixed*   *coords,
+>>>>>>> BRANCH (48a9a2 Merge "Use -Werror in external/freetype" am: 51036df35f)
                      FT_MM_Var*  *mm_var );
 
   FT_LOCAL( void )

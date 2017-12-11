@@ -1215,7 +1215,11 @@
     face = (TT_Face)size->root.face;
 
     /* nothing to do for CFF2 */
+<<<<<<< HEAD   (8c932b Necessary changes to build FreeType on Android)
     if ( face->is_cff2 )
+=======
+    if ( face->isCFF2 )
+>>>>>>> BRANCH (48a9a2 Merge "Use -Werror in external/freetype" am: 51036df35f)
       return FT_Err_Ok;
 
     size->ttmetrics.valid = FALSE;

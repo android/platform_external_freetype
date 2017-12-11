@@ -1222,6 +1222,7 @@ typedef ptrdiff_t  FT_PtrDist;
   static void
   gray_hline( RAS_ARG_ TCoord  x,
                        TCoord  y,
+<<<<<<< HEAD   (8c932b Necessary changes to build FreeType on Android)
                        TArea   coverage,
                        TCoord  acount )
   {
@@ -1250,6 +1251,43 @@ typedef ptrdiff_t  FT_PtrDist;
       FT_Span  span;
 
 
+=======
+                       TArea   area,
+                       TCoord  acount )
+  {
+    int      coverage;
+    FT_Span  span;
+
+
+    /* compute the coverage line's coverage, depending on the    */
+    /* outline fill rule                                         */
+    /*                                                           */
+    /* the coverage percentage is area/(PIXEL_BITS*PIXEL_BITS*2) */
+    /*                                                           */
+    coverage = (int)( area >> ( PIXEL_BITS * 2 + 1 - 8 ) );
+                                                    /* use range 0..256 */
+    if ( coverage < 0 )
+      coverage = -coverage;
+
+    if ( ras.outline.flags & FT_OUTLINE_EVEN_ODD_FILL )
+    {
+      coverage &= 511;
+
+      if ( coverage > 256 )
+        coverage = 512 - coverage;
+      else if ( coverage == 256 )
+        coverage = 255;
+    }
+    else
+    {
+      /* normal non-zero winding rule */
+      if ( coverage >= 256 )
+        coverage = 255;
+    }
+
+    if ( ras.render_span )  /* for FT_RASTER_FLAG_DIRECT only */
+    {
+>>>>>>> BRANCH (48a9a2 Merge "Use -Werror in external/freetype" am: 51036df35f)
       span.x        = (short)x;
       span.len      = (unsigned short)acount;
       span.coverage = (unsigned char)coverage;

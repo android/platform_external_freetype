@@ -188,6 +188,7 @@
                                  FT_Fixed*  coords )
   {
     FT_Error                      error;
+<<<<<<< HEAD   (8c932b Necessary changes to build FreeType on Android)
     FT_Service_MultiMasters       service_mm   = NULL;
     FT_Service_MetricsVariations  service_mvar = NULL;
 
@@ -311,6 +312,131 @@
     FT_Error                      error;
     FT_Service_MultiMasters       service_mm   = NULL;
     FT_Service_MetricsVariations  service_mvar = NULL;
+=======
+    FT_Service_MultiMasters       service_mm;
+    FT_Service_MetricsVariations  service_mvar;
+
+
+    /* check of `face' delayed to `ft_face_get_mm_service' */
+
+    if ( !coords )
+      return FT_THROW( Invalid_Argument );
+
+    error = ft_face_get_mm_service( face, &service_mm );
+    if ( !error )
+    {
+      error = FT_ERR( Invalid_Argument );
+      if ( service_mm->set_var_design )
+        error = service_mm->set_var_design( face, num_coords, coords );
+    }
+
+    if ( !error )
+      error = ft_face_get_mvar_service( face, &service_mvar );
+
+    if ( !error )
+    {
+      if ( service_mvar->metrics_adjust )
+        service_mvar->metrics_adjust( face );
+    }
+
+    /* enforce recomputation of auto-hinting data */
+    if ( !error && face->autohint.finalizer )
+    {
+      face->autohint.finalizer( face->autohint.data );
+      face->autohint.data = NULL;
+    }
+
+    return error;
+  }
+
+
+  /* documentation is in ftmm.h */
+
+  FT_EXPORT_DEF( FT_Error )
+  FT_Get_Var_Design_Coordinates( FT_Face    face,
+                                 FT_UInt    num_coords,
+                                 FT_Fixed*  coords )
+  {
+    FT_Error                 error;
+    FT_Service_MultiMasters  service;
+
+
+    /* check of `face' delayed to `ft_face_get_mm_service' */
+
+    if ( !coords )
+      return FT_THROW( Invalid_Argument );
+
+    error = ft_face_get_mm_service( face, &service );
+    if ( !error )
+    {
+      error = FT_ERR( Invalid_Argument );
+      if ( service->get_var_design )
+        error = service->get_var_design( face, num_coords, coords );
+    }
+
+    return error;
+  }
+
+
+  /* documentation is in ftmm.h */
+
+  FT_EXPORT_DEF( FT_Error )
+  FT_Set_MM_Blend_Coordinates( FT_Face    face,
+                               FT_UInt    num_coords,
+                               FT_Fixed*  coords )
+  {
+    FT_Error                      error;
+    FT_Service_MultiMasters       service_mm;
+    FT_Service_MetricsVariations  service_mvar;
+
+
+    /* check of `face' delayed to `ft_face_get_mm_service' */
+
+    if ( !coords )
+      return FT_THROW( Invalid_Argument );
+
+    error = ft_face_get_mm_service( face, &service_mm );
+    if ( !error )
+    {
+      error = FT_ERR( Invalid_Argument );
+      if ( service_mm->set_mm_blend )
+        error = service_mm->set_mm_blend( face, num_coords, coords );
+    }
+
+    if ( !error )
+      error = ft_face_get_mvar_service( face, &service_mvar );
+
+    if ( !error )
+    {
+      if ( service_mvar->metrics_adjust )
+        service_mvar->metrics_adjust( face );
+    }
+
+    /* enforce recomputation of auto-hinting data */
+    if ( !error && face->autohint.finalizer )
+    {
+      face->autohint.finalizer( face->autohint.data );
+      face->autohint.data = NULL;
+    }
+
+    return error;
+  }
+
+
+  /* documentation is in ftmm.h */
+
+  /* This is exactly the same as the previous function.  It exists for */
+  /* orthogonality.                                                    */
+
+  FT_EXPORT_DEF( FT_Error )
+  FT_Set_Var_Blend_Coordinates( FT_Face    face,
+                                FT_UInt    num_coords,
+                                FT_Fixed*  coords )
+  {
+    FT_Error                      error;
+    FT_Service_MultiMasters       service_mm;
+    FT_Service_MetricsVariations  service_mvar;
+>>>>>>> BRANCH (48a9a2 Merge "Use -Werror in external/freetype" am: 51036df35f)
 
 
     /* check of `face' delayed to `ft_face_get_mm_service' */

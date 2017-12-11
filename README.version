@@ -1,3 +1,7 @@
 URL: http://git.savannah.gnu.org/cgit/freetype/freetype2.git/commit/?id=e432ebf
+<<<<<<< HEAD   (8c932b Necessary changes to build FreeType on Android)
 Version: 447a0b62634802d8acdb56008cff5ff4e50be244
+=======
+Version: e432ebf2e2c96e75f674af41f062d8b210de8491
+>>>>>>> BRANCH (48a9a2 Merge "Use -Werror in external/freetype" am: 51036df35f)
 BugComponent: 75970

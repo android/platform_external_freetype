@@ -265,7 +265,11 @@
   }
 
 
+<<<<<<< HEAD   (8c932b Necessary changes to build FreeType on Android)
   static void
+=======
+  void
+>>>>>>> BRANCH (48a9a2 Merge "Use -Werror in external/freetype" am: 51036df35f)
   af_latin_sort_blue( FT_UInt        count,
                       AF_LatinBlue*  table )
   {

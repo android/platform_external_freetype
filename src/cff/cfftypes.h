@@ -321,6 +321,7 @@ FT_BEGIN_HEADER
     FT_Byte**     local_subrs; /* array of pointers           */
                                /* into Local Subrs INDEX data */
 
+<<<<<<< HEAD   (8c932b Necessary changes to build FreeType on Android)
     FT_UInt32  random;
 
   } CFF_SubFontRec;
@@ -392,6 +393,76 @@ FT_BEGIN_HEADER
     FT_Generic       cf2_instance;
 
     /* since version 2.7.1 */
+=======
+  } CFF_SubFontRec;
+
+
+#define CFF_MAX_CID_FONTS  256
+
+
+  typedef struct  CFF_FontRec_
+  {
+    FT_Library       library;
+    FT_Stream        stream;
+    FT_Memory        memory;        /* TODO: take this from stream->memory? */
+    FT_ULong         base_offset;   /* offset to start of CFF */
+    FT_UInt          num_faces;
+    FT_UInt          num_glyphs;
+
+    FT_Byte          version_major;
+    FT_Byte          version_minor;
+    FT_Byte          header_size;
+
+    FT_UInt          top_dict_length;   /* cff2 only */
+
+    FT_Bool          cff2;
+
+    CFF_IndexRec     name_index;
+    CFF_IndexRec     top_dict_index;
+    CFF_IndexRec     global_subrs_index;
+
+    CFF_EncodingRec  encoding;
+    CFF_CharsetRec   charset;
+
+    CFF_IndexRec     charstrings_index;
+    CFF_IndexRec     font_dict_index;
+    CFF_IndexRec     private_index;
+    CFF_IndexRec     local_subrs_index;
+
+    FT_String*       font_name;
+
+    /* array of pointers into Global Subrs INDEX data */
+    FT_Byte**        global_subrs;
+
+    /* array of pointers into String INDEX data stored at string_pool */
+    FT_UInt          num_strings;
+    FT_Byte**        strings;
+    FT_Byte*         string_pool;
+    FT_ULong         string_pool_size;
+
+    CFF_SubFontRec   top_font;
+    FT_UInt          num_subfonts;
+    CFF_SubFont      subfonts[CFF_MAX_CID_FONTS];
+
+    CFF_FDSelectRec  fd_select;
+
+    /* interface to PostScript hinter */
+    PSHinter_Service  pshinter;
+
+    /* interface to Postscript Names service */
+    FT_Service_PsCMaps  psnames;
+
+    /* since version 2.3.0 */
+    PS_FontInfoRec*  font_info;   /* font info dictionary */
+
+    /* since version 2.3.6 */
+    FT_String*       registry;
+    FT_String*       ordering;
+
+    /* since version 2.4.12 */
+    FT_Generic       cf2_instance;
+
+>>>>>>> BRANCH (48a9a2 Merge "Use -Werror in external/freetype" am: 51036df35f)
     CFF_VStoreRec    vstore;        /* parsed vstore structure */
 
   } CFF_FontRec;

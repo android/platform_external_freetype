@@ -336,6 +336,7 @@
      *  `standard_{vertical,horizontal}_width' change.
      *
      *  Ignore errors and carry on without emboldening.
+<<<<<<< HEAD   (8c932b Necessary changes to build FreeType on Android)
      *
      */
 
@@ -344,6 +345,10 @@
          ( !face->internal->no_stem_darkening        ||
            ( face->internal->no_stem_darkening < 0 &&
              !module->no_stem_darkening            ) ) )
+=======
+     */
+    if ( !module->no_stem_darkening )
+>>>>>>> BRANCH (48a9a2 Merge "Use -Werror in external/freetype" am: 51036df35f)
       af_loader_embolden_glyph_in_slot( loader, face, style_metrics );
 
     loader->transformed = internal->glyph_transformed;

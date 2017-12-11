@@ -268,6 +268,7 @@ FT_BEGIN_HEADER
    *   defined in your build of the library, which should correspond to all
    *   default builds of FreeType.
    *
+<<<<<<< HEAD   (8c932b Necessary changes to build FreeType on Android)
    *   LCD filter weights can also be set per face using @FT_Face_Properties
    *   with @FT_PARAM_TAG_LCD_FILTER_WEIGHTS.
    *
@@ -308,6 +309,14 @@ FT_BEGIN_HEADER
 
   typedef FT_Byte  FT_LcdFiveTapFilter[FT_LCD_FILTER_FIVE_TAPS];
 
+=======
+   * @since:
+   *   2.4.0
+   */
+  FT_EXPORT( FT_Error )
+  FT_Library_SetLcdFilterWeights( FT_Library      library,
+                                  unsigned char  *weights );
+>>>>>>> BRANCH (48a9a2 Merge "Use -Werror in external/freetype" am: 51036df35f)
 
   /* */
 

@@ -304,10 +304,19 @@
         long         nsd = ft_strtol( s, NULL, 10 );
 
 
+<<<<<<< HEAD   (8c932b Necessary changes to build FreeType on Android)
         if ( !nsd )
           module->no_stem_darkening = FALSE;
         else
           module->no_stem_darkening = TRUE;
+=======
+        if ( nsd == 0 )
+          module->no_stem_darkening = 0;
+        else if ( nsd == 1 )
+          module->no_stem_darkening = 1;
+        else
+          return FT_THROW( Invalid_Argument );
+>>>>>>> BRANCH (48a9a2 Merge "Use -Werror in external/freetype" am: 51036df35f)
       }
       else
 #endif

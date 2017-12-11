@@ -4,6 +4,7 @@
 /*                                                                         */
 /*    Auxiliary functions for PostScript fonts (body).                     */
 /*                                                                         */
+<<<<<<< HEAD   (8c932b Necessary changes to build FreeType on Android)
 /*  Copyright 1996-2017 by                                                 */
 /*  David Turner, Robert Wilhelm, and Werner Lemberg.                      */
 /*                                                                         */
@@ -1243,6 +1244,1242 @@
               error = FT_THROW( Invalid_File_Format );
 
               FT_FREE( temp );
+=======
+/*  Copyright 1996-2015 by                                                 */
+/*  David Turner, Robert Wilhelm, and Werner Lemberg.                      */
+/*                                                                         */
+/*  This file is part of the FreeType project, and may only be used,       */
+/*  modified, and distributed under the terms of the FreeType project      */
+/*  license, LICENSE.TXT.  By continuing to use, modify, or distribute     */
+/*  this file you indicate that you have read the license and              */
+/*  understand and accept it fully.                                        */
+/*                                                                         */
+/***************************************************************************/
+
+
+#include <ft2build.h>
+#include FT_INTERNAL_POSTSCRIPT_AUX_H
+#include FT_INTERNAL_DEBUG_H
+#include FT_INTERNAL_CALC_H
+
+#include "psobjs.h"
+#include "psconv.h"
+
+#include "psauxerr.h"
+
+
+  /*************************************************************************/
+  /*                                                                       */
+  /* The macro FT_COMPONENT is used in trace mode.  It is an implicit      */
+  /* parameter of the FT_TRACE() and FT_ERROR() macros, used to print/log  */
+  /* messages during execution.                                            */
+  /*                                                                       */
+#undef  FT_COMPONENT
+#define FT_COMPONENT  trace_psobjs
+
+
+  /*************************************************************************/
+  /*************************************************************************/
+  /*****                                                               *****/
+  /*****                             PS_TABLE                          *****/
+  /*****                                                               *****/
+  /*************************************************************************/
+  /*************************************************************************/
+
+  /*************************************************************************/
+  /*                                                                       */
+  /* <Function>                                                            */
+  /*    ps_table_new                                                       */
+  /*                                                                       */
+  /* <Description>                                                         */
+  /*    Initializes a PS_Table.                                            */
+  /*                                                                       */
+  /* <InOut>                                                               */
+  /*    table  :: The address of the target table.                         */
+  /*                                                                       */
+  /* <Input>                                                               */
+  /*    count  :: The table size = the maximum number of elements.         */
+  /*                                                                       */
+  /*    memory :: The memory object to use for all subsequent              */
+  /*              reallocations.                                           */
+  /*                                                                       */
+  /* <Return>                                                              */
+  /*    FreeType error code.  0 means success.                             */
+  /*                                                                       */
+  FT_LOCAL_DEF( FT_Error )
+  ps_table_new( PS_Table   table,
+                FT_Int     count,
+                FT_Memory  memory )
+  {
+    FT_Error  error;
+
+
+    table->memory = memory;
+    if ( FT_NEW_ARRAY( table->elements, count ) ||
+         FT_NEW_ARRAY( table->lengths,  count ) )
+      goto Exit;
+
+    table->max_elems = count;
+    table->init      = 0xDEADBEEFUL;
+    table->num_elems = 0;
+    table->block     = NULL;
+    table->capacity  = 0;
+    table->cursor    = 0;
+
+    *(PS_Table_FuncsRec*)&table->funcs = ps_table_funcs;
+
+  Exit:
+    if ( error )
+      FT_FREE( table->elements );
+
+    return error;
+  }
+
+
+  static void
+  shift_elements( PS_Table  table,
+                  FT_Byte*  old_base )
+  {
+    FT_PtrDist  delta  = table->block - old_base;
+    FT_Byte**   offset = table->elements;
+    FT_Byte**   limit  = offset + table->max_elems;
+
+
+    for ( ; offset < limit; offset++ )
+    {
+      if ( offset[0] )
+        offset[0] += delta;
+    }
+  }
+
+
+  static FT_Error
+  reallocate_t1_table( PS_Table   table,
+                       FT_Offset  new_size )
+  {
+    FT_Memory  memory   = table->memory;
+    FT_Byte*   old_base = table->block;
+    FT_Error   error;
+
+
+    /* allocate new base block */
+    if ( FT_ALLOC( table->block, new_size ) )
+    {
+      table->block = old_base;
+      return error;
+    }
+
+    /* copy elements and shift offsets */
+    if ( old_base )
+    {
+      FT_MEM_COPY( table->block, old_base, table->capacity );
+      shift_elements( table, old_base );
+      FT_FREE( old_base );
+    }
+
+    table->capacity = new_size;
+
+    return FT_Err_Ok;
+  }
+
+
+  /*************************************************************************/
+  /*                                                                       */
+  /* <Function>                                                            */
+  /*    ps_table_add                                                       */
+  /*                                                                       */
+  /* <Description>                                                         */
+  /*    Adds an object to a PS_Table, possibly growing its memory block.   */
+  /*                                                                       */
+  /* <InOut>                                                               */
+  /*    table  :: The target table.                                        */
+  /*                                                                       */
+  /* <Input>                                                               */
+  /*    idx    :: The index of the object in the table.                    */
+  /*                                                                       */
+  /*    object :: The address of the object to copy in memory.             */
+  /*                                                                       */
+  /*    length :: The length in bytes of the source object.                */
+  /*                                                                       */
+  /* <Return>                                                              */
+  /*    FreeType error code.  0 means success.  An error is returned if a  */
+  /*    reallocation fails.                                                */
+  /*                                                                       */
+  FT_LOCAL_DEF( FT_Error )
+  ps_table_add( PS_Table  table,
+                FT_Int    idx,
+                void*     object,
+                FT_UInt   length )
+  {
+    if ( idx < 0 || idx >= table->max_elems )
+    {
+      FT_ERROR(( "ps_table_add: invalid index\n" ));
+      return FT_THROW( Invalid_Argument );
+    }
+
+    /* grow the base block if needed */
+    if ( table->cursor + length > table->capacity )
+    {
+      FT_Error    error;
+      FT_Offset   new_size = table->capacity;
+      FT_PtrDist  in_offset;
+
+
+      in_offset = (FT_Byte*)object - table->block;
+      if ( in_offset < 0 || (FT_Offset)in_offset >= table->capacity )
+        in_offset = -1;
+
+      while ( new_size < table->cursor + length )
+      {
+        /* increase size by 25% and round up to the nearest multiple
+           of 1024 */
+        new_size += ( new_size >> 2 ) + 1;
+        new_size  = FT_PAD_CEIL( new_size, 1024 );
+      }
+
+      error = reallocate_t1_table( table, new_size );
+      if ( error )
+        return error;
+
+      if ( in_offset >= 0 )
+        object = table->block + in_offset;
+    }
+
+    /* add the object to the base block and adjust offset */
+    table->elements[idx] = table->block + table->cursor;
+    table->lengths [idx] = length;
+    FT_MEM_COPY( table->block + table->cursor, object, length );
+
+    table->cursor += length;
+    return FT_Err_Ok;
+  }
+
+
+  /*************************************************************************/
+  /*                                                                       */
+  /* <Function>                                                            */
+  /*    ps_table_done                                                      */
+  /*                                                                       */
+  /* <Description>                                                         */
+  /*    Finalizes a PS_TableRec (i.e., reallocate it to its current        */
+  /*    cursor).                                                           */
+  /*                                                                       */
+  /* <InOut>                                                               */
+  /*    table :: The target table.                                         */
+  /*                                                                       */
+  /* <Note>                                                                */
+  /*    This function does NOT release the heap's memory block.  It is up  */
+  /*    to the caller to clean it, or reference it in its own structures.  */
+  /*                                                                       */
+  FT_LOCAL_DEF( void )
+  ps_table_done( PS_Table  table )
+  {
+    FT_Memory  memory = table->memory;
+    FT_Error   error;
+    FT_Byte*   old_base = table->block;
+
+
+    /* should never fail, because rec.cursor <= rec.size */
+    if ( !old_base )
+      return;
+
+    if ( FT_ALLOC( table->block, table->cursor ) )
+      return;
+    FT_MEM_COPY( table->block, old_base, table->cursor );
+    shift_elements( table, old_base );
+
+    table->capacity = table->cursor;
+    FT_FREE( old_base );
+
+    FT_UNUSED( error );
+  }
+
+
+  FT_LOCAL_DEF( void )
+  ps_table_release( PS_Table  table )
+  {
+    FT_Memory  memory = table->memory;
+
+
+    if ( (FT_ULong)table->init == 0xDEADBEEFUL )
+    {
+      FT_FREE( table->block );
+      FT_FREE( table->elements );
+      FT_FREE( table->lengths );
+      table->init = 0;
+    }
+  }
+
+
+  /*************************************************************************/
+  /*************************************************************************/
+  /*****                                                               *****/
+  /*****                            T1 PARSER                          *****/
+  /*****                                                               *****/
+  /*************************************************************************/
+  /*************************************************************************/
+
+
+  /* first character must be already part of the comment */
+
+  static void
+  skip_comment( FT_Byte*  *acur,
+                FT_Byte*   limit )
+  {
+    FT_Byte*  cur = *acur;
+
+
+    while ( cur < limit )
+    {
+      if ( IS_PS_NEWLINE( *cur ) )
+        break;
+      cur++;
+    }
+
+    *acur = cur;
+  }
+
+
+  static void
+  skip_spaces( FT_Byte*  *acur,
+               FT_Byte*   limit )
+  {
+    FT_Byte*  cur = *acur;
+
+
+    while ( cur < limit )
+    {
+      if ( !IS_PS_SPACE( *cur ) )
+      {
+        if ( *cur == '%' )
+          /* According to the PLRM, a comment is equal to a space. */
+          skip_comment( &cur, limit );
+        else
+          break;
+      }
+      cur++;
+    }
+
+    *acur = cur;
+  }
+
+
+#define IS_OCTAL_DIGIT( c ) ( '0' <= (c) && (c) <= '7' )
+
+
+  /* first character must be `(';                               */
+  /* *acur is positioned at the character after the closing `)' */
+
+  static FT_Error
+  skip_literal_string( FT_Byte*  *acur,
+                       FT_Byte*   limit )
+  {
+    FT_Byte*      cur   = *acur;
+    FT_Int        embed = 0;
+    FT_Error      error = FT_ERR( Invalid_File_Format );
+    unsigned int  i;
+
+
+    while ( cur < limit )
+    {
+      FT_Byte  c = *cur;
+
+
+      ++cur;
+
+      if ( c == '\\' )
+      {
+        /* Red Book 3rd ed., section `Literal Text Strings', p. 29:     */
+        /* A backslash can introduce three different types              */
+        /* of escape sequences:                                         */
+        /*   - a special escaped char like \r, \n, etc.                 */
+        /*   - a one-, two-, or three-digit octal number                */
+        /*   - none of the above in which case the backslash is ignored */
+
+        if ( cur == limit )
+          /* error (or to be ignored?) */
+          break;
+
+        switch ( *cur )
+        {
+          /* skip `special' escape */
+        case 'n':
+        case 'r':
+        case 't':
+        case 'b':
+        case 'f':
+        case '\\':
+        case '(':
+        case ')':
+          ++cur;
+          break;
+
+        default:
+          /* skip octal escape or ignore backslash */
+          for ( i = 0; i < 3 && cur < limit; ++i )
+          {
+            if ( !IS_OCTAL_DIGIT( *cur ) )
+              break;
+
+            ++cur;
+          }
+        }
+      }
+      else if ( c == '(' )
+        embed++;
+      else if ( c == ')' )
+      {
+        embed--;
+        if ( embed == 0 )
+        {
+          error = FT_Err_Ok;
+          break;
+        }
+      }
+    }
+
+    *acur = cur;
+
+    return error;
+  }
+
+
+  /* first character must be `<' */
+
+  static FT_Error
+  skip_string( FT_Byte*  *acur,
+               FT_Byte*   limit )
+  {
+    FT_Byte*  cur = *acur;
+    FT_Error  err =  FT_Err_Ok;
+
+
+    while ( ++cur < limit )
+    {
+      /* All whitespace characters are ignored. */
+      skip_spaces( &cur, limit );
+      if ( cur >= limit )
+        break;
+
+      if ( !IS_PS_XDIGIT( *cur ) )
+        break;
+    }
+
+    if ( cur < limit && *cur != '>' )
+    {
+      FT_ERROR(( "skip_string: missing closing delimiter `>'\n" ));
+      err = FT_THROW( Invalid_File_Format );
+    }
+    else
+      cur++;
+
+    *acur = cur;
+    return err;
+  }
+
+
+  /* first character must be the opening brace that */
+  /* starts the procedure                           */
+
+  /* NB: [ and ] need not match:                    */
+  /* `/foo {[} def' is a valid PostScript fragment, */
+  /* even within a Type1 font                       */
+
+  static FT_Error
+  skip_procedure( FT_Byte*  *acur,
+                  FT_Byte*   limit )
+  {
+    FT_Byte*  cur;
+    FT_Int    embed = 0;
+    FT_Error  error = FT_Err_Ok;
+
+
+    FT_ASSERT( **acur == '{' );
+
+    for ( cur = *acur; cur < limit && error == FT_Err_Ok; ++cur )
+    {
+      switch ( *cur )
+      {
+      case '{':
+        ++embed;
+        break;
+
+      case '}':
+        --embed;
+        if ( embed == 0 )
+        {
+          ++cur;
+          goto end;
+        }
+        break;
+
+      case '(':
+        error = skip_literal_string( &cur, limit );
+        break;
+
+      case '<':
+        error = skip_string( &cur, limit );
+        break;
+
+      case '%':
+        skip_comment( &cur, limit );
+        break;
+      }
+    }
+
+  end:
+    if ( embed != 0 )
+      error = FT_THROW( Invalid_File_Format );
+
+    *acur = cur;
+
+    return error;
+  }
+
+
+  /***********************************************************************/
+  /*                                                                     */
+  /* All exported parsing routines handle leading whitespace and stop at */
+  /* the first character which isn't part of the just handled token.     */
+  /*                                                                     */
+  /***********************************************************************/
+
+
+  FT_LOCAL_DEF( void )
+  ps_parser_skip_PS_token( PS_Parser  parser )
+  {
+    /* Note: PostScript allows any non-delimiting, non-whitespace        */
+    /*       character in a name (PS Ref Manual, 3rd ed, p31).           */
+    /*       PostScript delimiters are (, ), <, >, [, ], {, }, /, and %. */
+
+    FT_Byte*  cur   = parser->cursor;
+    FT_Byte*  limit = parser->limit;
+    FT_Error  error = FT_Err_Ok;
+
+
+    skip_spaces( &cur, limit );             /* this also skips comments */
+    if ( cur >= limit )
+      goto Exit;
+
+    /* self-delimiting, single-character tokens */
+    if ( *cur == '[' || *cur == ']' )
+    {
+      cur++;
+      goto Exit;
+    }
+
+    /* skip balanced expressions (procedures and strings) */
+
+    if ( *cur == '{' )                              /* {...} */
+    {
+      error = skip_procedure( &cur, limit );
+      goto Exit;
+    }
+
+    if ( *cur == '(' )                              /* (...) */
+    {
+      error = skip_literal_string( &cur, limit );
+      goto Exit;
+    }
+
+    if ( *cur == '<' )                              /* <...> */
+    {
+      if ( cur + 1 < limit && *(cur + 1) == '<' )   /* << */
+      {
+        cur++;
+        cur++;
+      }
+      else
+        error = skip_string( &cur, limit );
+
+      goto Exit;
+    }
+
+    if ( *cur == '>' )
+    {
+      cur++;
+      if ( cur >= limit || *cur != '>' )             /* >> */
+      {
+        FT_ERROR(( "ps_parser_skip_PS_token:"
+                   " unexpected closing delimiter `>'\n" ));
+        error = FT_THROW( Invalid_File_Format );
+        goto Exit;
+      }
+      cur++;
+      goto Exit;
+    }
+
+    if ( *cur == '/' )
+      cur++;
+
+    /* anything else */
+    while ( cur < limit )
+    {
+      /* *cur might be invalid (e.g., ')' or '}'), but this   */
+      /* is handled by the test `cur == parser->cursor' below */
+      if ( IS_PS_DELIM( *cur ) )
+        break;
+
+      cur++;
+    }
+
+  Exit:
+    if ( cur < limit && cur == parser->cursor )
+    {
+      FT_ERROR(( "ps_parser_skip_PS_token:"
+                 " current token is `%c' which is self-delimiting\n"
+                 "                        "
+                 " but invalid at this point\n",
+                 *cur ));
+
+      error = FT_THROW( Invalid_File_Format );
+    }
+
+    parser->error  = error;
+    parser->cursor = cur;
+  }
+
+
+  FT_LOCAL_DEF( void )
+  ps_parser_skip_spaces( PS_Parser  parser )
+  {
+    skip_spaces( &parser->cursor, parser->limit );
+  }
+
+
+  /* `token' here means either something between balanced delimiters */
+  /* or the next token; the delimiters are not removed.              */
+
+  FT_LOCAL_DEF( void )
+  ps_parser_to_token( PS_Parser  parser,
+                      T1_Token   token )
+  {
+    FT_Byte*  cur;
+    FT_Byte*  limit;
+    FT_Int    embed;
+
+
+    token->type  = T1_TOKEN_TYPE_NONE;
+    token->start = NULL;
+    token->limit = NULL;
+
+    /* first of all, skip leading whitespace */
+    ps_parser_skip_spaces( parser );
+
+    cur   = parser->cursor;
+    limit = parser->limit;
+
+    if ( cur >= limit )
+      return;
+
+    switch ( *cur )
+    {
+      /************* check for literal string *****************/
+    case '(':
+      token->type  = T1_TOKEN_TYPE_STRING;
+      token->start = cur;
+
+      if ( skip_literal_string( &cur, limit ) == FT_Err_Ok )
+        token->limit = cur;
+      break;
+
+      /************* check for programs/array *****************/
+    case '{':
+      token->type  = T1_TOKEN_TYPE_ARRAY;
+      token->start = cur;
+
+      if ( skip_procedure( &cur, limit ) == FT_Err_Ok )
+        token->limit = cur;
+      break;
+
+      /************* check for table/array ********************/
+      /* XXX: in theory we should also look for "<<"          */
+      /*      since this is semantically equivalent to "[";   */
+      /*      in practice it doesn't matter (?)               */
+    case '[':
+      token->type  = T1_TOKEN_TYPE_ARRAY;
+      embed        = 1;
+      token->start = cur++;
+
+      /* we need this to catch `[ ]' */
+      parser->cursor = cur;
+      ps_parser_skip_spaces( parser );
+      cur = parser->cursor;
+
+      while ( cur < limit && !parser->error )
+      {
+        /* XXX: this is wrong because it does not      */
+        /*      skip comments, procedures, and strings */
+        if ( *cur == '[' )
+          embed++;
+        else if ( *cur == ']' )
+        {
+          embed--;
+          if ( embed <= 0 )
+          {
+            token->limit = ++cur;
+            break;
+          }
+        }
+
+        parser->cursor = cur;
+        ps_parser_skip_PS_token( parser );
+        /* we need this to catch `[XXX ]' */
+        ps_parser_skip_spaces  ( parser );
+        cur = parser->cursor;
+      }
+      break;
+
+      /* ************ otherwise, it is any token **************/
+    default:
+      token->start = cur;
+      token->type  = ( *cur == '/' ? T1_TOKEN_TYPE_KEY : T1_TOKEN_TYPE_ANY );
+      ps_parser_skip_PS_token( parser );
+      cur = parser->cursor;
+      if ( !parser->error )
+        token->limit = cur;
+    }
+
+    if ( !token->limit )
+    {
+      token->start = NULL;
+      token->type  = T1_TOKEN_TYPE_NONE;
+    }
+
+    parser->cursor = cur;
+  }
+
+
+  /* NB: `tokens' can be NULL if we only want to count */
+  /* the number of array elements                      */
+
+  FT_LOCAL_DEF( void )
+  ps_parser_to_token_array( PS_Parser  parser,
+                            T1_Token   tokens,
+                            FT_UInt    max_tokens,
+                            FT_Int*    pnum_tokens )
+  {
+    T1_TokenRec  master;
+
+
+    *pnum_tokens = -1;
+
+    /* this also handles leading whitespace */
+    ps_parser_to_token( parser, &master );
+
+    if ( master.type == T1_TOKEN_TYPE_ARRAY )
+    {
+      FT_Byte*  old_cursor = parser->cursor;
+      FT_Byte*  old_limit  = parser->limit;
+      T1_Token  cur        = tokens;
+      T1_Token  limit      = cur + max_tokens;
+
+
+      /* don't include outermost delimiters */
+      parser->cursor = master.start + 1;
+      parser->limit  = master.limit - 1;
+
+      while ( parser->cursor < parser->limit )
+      {
+        T1_TokenRec  token;
+
+
+        ps_parser_to_token( parser, &token );
+        if ( !token.type )
+          break;
+
+        if ( tokens != NULL && cur < limit )
+          *cur = token;
+
+        cur++;
+      }
+
+      *pnum_tokens = (FT_Int)( cur - tokens );
+
+      parser->cursor = old_cursor;
+      parser->limit  = old_limit;
+    }
+  }
+
+
+  /* first character must be a delimiter or a part of a number */
+  /* NB: `coords' can be NULL if we just want to skip the      */
+  /*     array; in this case we ignore `max_coords'            */
+
+  static FT_Int
+  ps_tocoordarray( FT_Byte*  *acur,
+                   FT_Byte*   limit,
+                   FT_Int     max_coords,
+                   FT_Short*  coords )
+  {
+    FT_Byte*  cur   = *acur;
+    FT_Int    count = 0;
+    FT_Byte   c, ender;
+
+
+    if ( cur >= limit )
+      goto Exit;
+
+    /* check for the beginning of an array; otherwise, only one number */
+    /* will be read                                                    */
+    c     = *cur;
+    ender = 0;
+
+    if ( c == '[' )
+      ender = ']';
+    else if ( c == '{' )
+      ender = '}';
+
+    if ( ender )
+      cur++;
+
+    /* now, read the coordinates */
+    while ( cur < limit )
+    {
+      FT_Short  dummy;
+      FT_Byte*  old_cur;
+
+
+      /* skip whitespace in front of data */
+      skip_spaces( &cur, limit );
+      if ( cur >= limit )
+        goto Exit;
+
+      if ( *cur == ender )
+      {
+        cur++;
+        break;
+      }
+
+      old_cur = cur;
+
+      if ( coords != NULL && count >= max_coords )
+        break;
+
+      /* call PS_Conv_ToFixed() even if coords == NULL */
+      /* to properly parse number at `cur'             */
+      *( coords != NULL ? &coords[count] : &dummy ) =
+        (FT_Short)( PS_Conv_ToFixed( &cur, limit, 0 ) >> 16 );
+
+      if ( old_cur == cur )
+      {
+        count = -1;
+        goto Exit;
+      }
+      else
+        count++;
+
+      if ( !ender )
+        break;
+    }
+
+  Exit:
+    *acur = cur;
+    return count;
+  }
+
+
+  /* first character must be a delimiter or a part of a number */
+  /* NB: `values' can be NULL if we just want to skip the      */
+  /*     array; in this case we ignore `max_values'            */
+  /*                                                           */
+  /* return number of successfully parsed values               */
+
+  static FT_Int
+  ps_tofixedarray( FT_Byte*  *acur,
+                   FT_Byte*   limit,
+                   FT_Int     max_values,
+                   FT_Fixed*  values,
+                   FT_Int     power_ten )
+  {
+    FT_Byte*  cur   = *acur;
+    FT_Int    count = 0;
+    FT_Byte   c, ender;
+
+
+    if ( cur >= limit )
+      goto Exit;
+
+    /* Check for the beginning of an array.  Otherwise, only one number */
+    /* will be read.                                                    */
+    c     = *cur;
+    ender = 0;
+
+    if ( c == '[' )
+      ender = ']';
+    else if ( c == '{' )
+      ender = '}';
+
+    if ( ender )
+      cur++;
+
+    /* now, read the values */
+    while ( cur < limit )
+    {
+      FT_Fixed  dummy;
+      FT_Byte*  old_cur;
+
+
+      /* skip whitespace in front of data */
+      skip_spaces( &cur, limit );
+      if ( cur >= limit )
+        goto Exit;
+
+      if ( *cur == ender )
+      {
+        cur++;
+        break;
+      }
+
+      old_cur = cur;
+
+      if ( values != NULL && count >= max_values )
+        break;
+
+      /* call PS_Conv_ToFixed() even if coords == NULL */
+      /* to properly parse number at `cur'             */
+      *( values != NULL ? &values[count] : &dummy ) =
+        PS_Conv_ToFixed( &cur, limit, power_ten );
+
+      if ( old_cur == cur )
+      {
+        count = -1;
+        goto Exit;
+      }
+      else
+        count++;
+
+      if ( !ender )
+        break;
+    }
+
+  Exit:
+    *acur = cur;
+    return count;
+  }
+
+
+#if 0
+
+  static FT_String*
+  ps_tostring( FT_Byte**  cursor,
+               FT_Byte*   limit,
+               FT_Memory  memory )
+  {
+    FT_Byte*    cur = *cursor;
+    FT_UInt     len = 0;
+    FT_Int      count;
+    FT_String*  result;
+    FT_Error    error;
+
+
+    /* XXX: some stupid fonts have a `Notice' or `Copyright' string     */
+    /*      that simply doesn't begin with an opening parenthesis, even */
+    /*      though they have a closing one!  E.g. "amuncial.pfb"        */
+    /*                                                                  */
+    /*      We must deal with these ill-fated cases there.  Note that   */
+    /*      these fonts didn't work with the old Type 1 driver as the   */
+    /*      notice/copyright was not recognized as a valid string token */
+    /*      and made the old token parser commit errors.                */
+
+    while ( cur < limit && ( *cur == ' ' || *cur == '\t' ) )
+      cur++;
+    if ( cur + 1 >= limit )
+      return 0;
+
+    if ( *cur == '(' )
+      cur++;  /* skip the opening parenthesis, if there is one */
+
+    *cursor = cur;
+    count   = 0;
+
+    /* then, count its length */
+    for ( ; cur < limit; cur++ )
+    {
+      if ( *cur == '(' )
+        count++;
+
+      else if ( *cur == ')' )
+      {
+        count--;
+        if ( count < 0 )
+          break;
+      }
+    }
+
+    len = (FT_UInt)( cur - *cursor );
+    if ( cur >= limit || FT_ALLOC( result, len + 1 ) )
+      return 0;
+
+    /* now copy the string */
+    FT_MEM_COPY( result, *cursor, len );
+    result[len] = '\0';
+    *cursor = cur;
+    return result;
+  }
+
+#endif /* 0 */
+
+
+  static int
+  ps_tobool( FT_Byte*  *acur,
+             FT_Byte*   limit )
+  {
+    FT_Byte*  cur    = *acur;
+    FT_Bool   result = 0;
+
+
+    /* return 1 if we find `true', 0 otherwise */
+    if ( cur + 3 < limit &&
+         cur[0] == 't'   &&
+         cur[1] == 'r'   &&
+         cur[2] == 'u'   &&
+         cur[3] == 'e'   )
+    {
+      result = 1;
+      cur   += 5;
+    }
+    else if ( cur + 4 < limit &&
+              cur[0] == 'f'   &&
+              cur[1] == 'a'   &&
+              cur[2] == 'l'   &&
+              cur[3] == 's'   &&
+              cur[4] == 'e'   )
+    {
+      result = 0;
+      cur   += 6;
+    }
+
+    *acur = cur;
+    return result;
+  }
+
+
+  /* load a simple field (i.e. non-table) into the current list of objects */
+
+  FT_LOCAL_DEF( FT_Error )
+  ps_parser_load_field( PS_Parser       parser,
+                        const T1_Field  field,
+                        void**          objects,
+                        FT_UInt         max_objects,
+                        FT_ULong*       pflags )
+  {
+    T1_TokenRec   token;
+    FT_Byte*      cur;
+    FT_Byte*      limit;
+    FT_UInt       count;
+    FT_UInt       idx;
+    FT_Error      error;
+    T1_FieldType  type;
+
+
+    /* this also skips leading whitespace */
+    ps_parser_to_token( parser, &token );
+    if ( !token.type )
+      goto Fail;
+
+    count = 1;
+    idx   = 0;
+    cur   = token.start;
+    limit = token.limit;
+
+    type = field->type;
+
+    /* we must detect arrays in /FontBBox */
+    if ( type == T1_FIELD_TYPE_BBOX )
+    {
+      T1_TokenRec  token2;
+      FT_Byte*     old_cur   = parser->cursor;
+      FT_Byte*     old_limit = parser->limit;
+
+
+      /* don't include delimiters */
+      parser->cursor = token.start + 1;
+      parser->limit  = token.limit - 1;
+
+      ps_parser_to_token( parser, &token2 );
+      parser->cursor = old_cur;
+      parser->limit  = old_limit;
+
+      if ( token2.type == T1_TOKEN_TYPE_ARRAY )
+      {
+        type = T1_FIELD_TYPE_MM_BBOX;
+        goto FieldArray;
+      }
+    }
+    else if ( token.type == T1_TOKEN_TYPE_ARRAY )
+    {
+      count = max_objects;
+
+    FieldArray:
+      /* if this is an array and we have no blend, an error occurs */
+      if ( max_objects == 0 )
+        goto Fail;
+
+      idx = 1;
+
+      /* don't include delimiters */
+      cur++;
+      limit--;
+    }
+
+    for ( ; count > 0; count--, idx++ )
+    {
+      FT_Byte*    q = (FT_Byte*)objects[idx] + field->offset;
+      FT_Long     val;
+      FT_String*  string;
+
+
+      skip_spaces( &cur, limit );
+
+      switch ( type )
+      {
+      case T1_FIELD_TYPE_BOOL:
+        val = ps_tobool( &cur, limit );
+        goto Store_Integer;
+
+      case T1_FIELD_TYPE_FIXED:
+        val = PS_Conv_ToFixed( &cur, limit, 0 );
+        goto Store_Integer;
+
+      case T1_FIELD_TYPE_FIXED_1000:
+        val = PS_Conv_ToFixed( &cur, limit, 3 );
+        goto Store_Integer;
+
+      case T1_FIELD_TYPE_INTEGER:
+        val = PS_Conv_ToInt( &cur, limit );
+        /* fall through */
+
+      Store_Integer:
+        switch ( field->size )
+        {
+        case (8 / FT_CHAR_BIT):
+          *(FT_Byte*)q = (FT_Byte)val;
+          break;
+
+        case (16 / FT_CHAR_BIT):
+          *(FT_UShort*)q = (FT_UShort)val;
+          break;
+
+        case (32 / FT_CHAR_BIT):
+          *(FT_UInt32*)q = (FT_UInt32)val;
+          break;
+
+        default:                /* for 64-bit systems */
+          *(FT_Long*)q = val;
+        }
+        break;
+
+      case T1_FIELD_TYPE_STRING:
+      case T1_FIELD_TYPE_KEY:
+        {
+          FT_Memory  memory = parser->memory;
+          FT_UInt    len    = (FT_UInt)( limit - cur );
+
+
+          if ( cur >= limit )
+            break;
+
+          /* we allow both a string or a name   */
+          /* for cases like /FontName (foo) def */
+          if ( token.type == T1_TOKEN_TYPE_KEY )
+          {
+            /* don't include leading `/' */
+            len--;
+            cur++;
+          }
+          else if ( token.type == T1_TOKEN_TYPE_STRING )
+          {
+            /* don't include delimiting parentheses    */
+            /* XXX we don't handle <<...>> here        */
+            /* XXX should we convert octal escapes?    */
+            /*     if so, what encoding should we use? */
+            cur++;
+            len -= 2;
+          }
+          else
+          {
+            FT_ERROR(( "ps_parser_load_field:"
+                       " expected a name or string\n"
+                       "                     "
+                       " but found token of type %d instead\n",
+                       token.type ));
+            error = FT_THROW( Invalid_File_Format );
+            goto Exit;
+          }
+
+          /* for this to work (FT_String**)q must have been */
+          /* initialized to NULL                            */
+          if ( *(FT_String**)q != NULL )
+          {
+            FT_TRACE0(( "ps_parser_load_field: overwriting field %s\n",
+                        field->ident ));
+            FT_FREE( *(FT_String**)q );
+            *(FT_String**)q = NULL;
+          }
+
+          if ( FT_ALLOC( string, len + 1 ) )
+            goto Exit;
+
+          FT_MEM_COPY( string, cur, len );
+          string[len] = 0;
+
+          *(FT_String**)q = string;
+        }
+        break;
+
+      case T1_FIELD_TYPE_BBOX:
+        {
+          FT_Fixed  temp[4];
+          FT_BBox*  bbox = (FT_BBox*)q;
+          FT_Int    result;
+
+
+          result = ps_tofixedarray( &cur, limit, 4, temp, 0 );
+
+          if ( result < 4 )
+          {
+            FT_ERROR(( "ps_parser_load_field:"
+                       " expected four integers in bounding box\n" ));
+            error = FT_THROW( Invalid_File_Format );
+            goto Exit;
+          }
+
+          bbox->xMin = FT_RoundFix( temp[0] );
+          bbox->yMin = FT_RoundFix( temp[1] );
+          bbox->xMax = FT_RoundFix( temp[2] );
+          bbox->yMax = FT_RoundFix( temp[3] );
+        }
+        break;
+
+      case T1_FIELD_TYPE_MM_BBOX:
+        {
+          FT_Memory  memory = parser->memory;
+          FT_Fixed*  temp;
+          FT_Int     result;
+          FT_UInt    i;
+
+
+          if ( FT_NEW_ARRAY( temp, max_objects * 4 ) )
+            goto Exit;
+
+          for ( i = 0; i < 4; i++ )
+          {
+            result = ps_tofixedarray( &cur, limit, (FT_Int)max_objects,
+                                      temp + i * max_objects, 0 );
+            if ( result < 0 || (FT_UInt)result < max_objects )
+            {
+              FT_ERROR(( "ps_parser_load_field:"
+                         " expected %d integers in the %s subarray\n"
+                         "                     "
+                         " of /FontBBox in the /Blend dictionary\n",
+                         max_objects,
+                         i == 0 ? "first"
+                                : ( i == 1 ? "second"
+                                           : ( i == 2 ? "third"
+                                                      : "fourth" ) ) ));
+              error = FT_THROW( Invalid_File_Format );
+>>>>>>> BRANCH (48a9a2 Merge "Use -Werror in external/freetype" am: 51036df35f)
               goto Exit;
             }
 

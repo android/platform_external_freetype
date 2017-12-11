@@ -118,10 +118,17 @@ FT_BEGIN_HEADER
   {
     FT_DriverRec  root;
 
+<<<<<<< HEAD   (8c932b Necessary changes to build FreeType on Android)
     FT_UInt   hinting_engine;
     FT_Bool   no_stem_darkening;
     FT_Int    darken_params[8];
     FT_Int32  random_seed;
+=======
+    FT_UInt  hinting_engine;
+    FT_Bool  no_stem_darkening;
+
+    FT_Int  darken_params[8];
+>>>>>>> BRANCH (48a9a2 Merge "Use -Werror in external/freetype" am: 51036df35f)
 
   } CFF_DriverRec;
 

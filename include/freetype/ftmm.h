@@ -166,6 +166,7 @@ FT_BEGIN_HEADER
   /*    FT_Var_Named_Style                                                 */
   /*                                                                       */
   /* <Description>                                                         */
+<<<<<<< HEAD   (8c932b Necessary changes to build FreeType on Android)
   /*    A structure to model a named instance in a TrueType GX or OpenType */
   /*    variation font.                                                    */
   /*                                                                       */
@@ -229,6 +230,70 @@ FT_BEGIN_HEADER
   /*                       internally by FreeType.                         */
   /*                                                                       */
   /*    namedstyle      :: A named style (instance) table.                 */
+=======
+  /*    A structure to model a named style in a TrueType GX or OpenType    */
+  /*    variation font.                                                    */
+  /*                                                                       */
+  /*    This structure can't be used for Adobe MM fonts.                   */
+  /*                                                                       */
+  /* <Fields>                                                              */
+  /*    coords :: The design coordinates for this style.                   */
+  /*              This is an array with one entry for each axis.           */
+  /*                                                                       */
+  /*    strid  :: The entry in `name' table identifying this style.        */
+  /*                                                                       */
+  /*    psid   :: The entry in `name' table identifying a PostScript name  */
+  /*              for this style.                                          */
+  /*                                                                       */
+  typedef struct  FT_Var_Named_Style_
+  {
+    FT_Fixed*  coords;
+    FT_UInt    strid;
+    FT_UInt    psid;   /* since 2.7.1 */
+
+  } FT_Var_Named_Style;
+
+
+  /*************************************************************************/
+  /*                                                                       */
+  /* <Struct>                                                              */
+  /*    FT_MM_Var                                                          */
+  /*                                                                       */
+  /* <Description>                                                         */
+  /*    A structure to model the axes and space of a Adobe MM, TrueType    */
+  /*    GX, or OpenType variation font.                                    */
+  /*                                                                       */
+  /*    Some fields are specific to one format and not to the others.      */
+  /*                                                                       */
+  /* <Fields>                                                              */
+  /*    num_axis        :: The number of axes.  The maximum value is~4 for */
+  /*                       Adobe MM fonts; no limit in TrueType GX or      */
+  /*                       OpenType variation fonts.                       */
+  /*                                                                       */
+  /*    num_designs     :: The number of designs; should be normally       */
+  /*                       2^num_axis for Adobe MM fonts.  Not meaningful  */
+  /*                       for TrueType GX or OpenType variation fonts     */
+  /*                       (where every glyph could have a different       */
+  /*                       number of designs).                             */
+  /*                                                                       */
+  /*    num_namedstyles :: The number of named styles; a `named style' is  */
+  /*                       a tuple of design coordinates that has a string */
+  /*                       ID (in the `name' table) associated with it.    */
+  /*                       The font can tell the user that, for example,   */
+  /*                       [Weight=1.5,Width=1.1] is `Bold'.               */
+  /*                                                                       */
+  /*                       For Adobe Multiple Masters fonts, this value is */
+  /*                       always zero because the format does not support */
+  /*                       named styles.                                   */
+  /*                                                                       */
+  /*    axis            :: An axis descriptor table.                       */
+  /*                       TrueType GX and OpenType variation fonts        */
+  /*                       contain slightly more data than Adobe MM fonts. */
+  /*                       Memory management of this pointer is done       */
+  /*                       internally by FreeType.                         */
+  /*                                                                       */
+  /*    namedstyle      :: A named style table.                            */
+>>>>>>> BRANCH (48a9a2 Merge "Use -Werror in external/freetype" am: 51036df35f)
   /*                       Only meaningful for TrueType GX and OpenType    */
   /*                       variation fonts.  Memory management of this     */
   /*                       pointer is done internally by FreeType.         */

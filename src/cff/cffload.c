@@ -1352,9 +1352,12 @@
       sum = cff_parse_num( parser, &parser->stack[i + base] ) * 65536;
 
       for ( j = 1; j < blend->lenBV; j++ )
-        sum += FT_MulFix( *weight++,
-                          cff_parse_num( parser,
-                                         &parser->stack[delta++] ) * 65536 );
+        sum = ADD_INT32(
+                sum,
+                FT_MulFix(
+                  *weight++,
+                  cff_parse_num( parser,
+                                 &parser->stack[delta++] ) * 65536 ) );
 
       /* point parser stack to new value on blend_stack */
       parser->stack[i + base] = subFont->blend_top;
@@ -1463,10 +1466,15 @@
 
       /* Note: `lenNDV' could be zero.                              */
       /*       In that case, build default blend vector (1,0,0...). */
-      /*       In the normal case, initialize each component to 1   */
-      /*       before inner loop.                                   */
-      if ( lenNDV != 0 )
-        blend->BV[master] = FT_FIXED_ONE; /* default */
+      if ( !lenNDV )
+      {
+        blend->BV[master] = 0;
+        continue;
+      }
+
+      /* In the normal case, initialize each component to 1 */
+      /* before inner loop.                                 */
+      blend->BV[master] = FT_FIXED_ONE; /* default */
 
       /* inner loop steps through axes in this region */
       for ( j = 0; j < lenNDV; j++ )
@@ -1529,12 +1537,12 @@
                        lenNDV * sizeof ( *NDV ) ) )
         goto Exit;
 
-      blend->lenNDV = lenNDV;
       FT_MEM_COPY( blend->lastNDV,
                    NDV,
                    lenNDV * sizeof ( *NDV ) );
     }
 
+    blend->lenNDV  = lenNDV;
     blend->builtBV = TRUE;
 
   Exit:
@@ -1890,7 +1898,8 @@
     subfont->lenNDV = lenNDV;
     subfont->NDV    = NDV;
 
-    stackSize = font->cff2 ? font->top_font.font_dict.maxstack
+    /* add 1 for the operator */
+    stackSize = font->cff2 ? font->top_font.font_dict.maxstack + 1
                            : CFF_MAX_STACK_DEPTH + 1;
 
     if ( cff_parser_init( &parser,
@@ -2084,7 +2093,8 @@
         {
           do
           {
-            driver->random_seed = (FT_Int32)cff_random( driver->random_seed );
+            driver->random_seed =
+              (FT_Int32)cff_random( (FT_UInt32)driver->random_seed );
 
           } while ( driver->random_seed < 0 );
         }
@@ -2097,7 +2107,7 @@
           do
           {
             face->root.internal->random_seed =
-              (FT_Int32)cff_random( face->root.internal->random_seed );
+              (FT_Int32)cff_random( (FT_UInt32)face->root.internal->random_seed );
 
           } while ( face->root.internal->random_seed < 0 );
         }
@@ -2273,8 +2283,10 @@
         goto Exit;
       }
 
-      /* font names must not be empty */
-      if ( font->name_index.data_size < font->name_index.count )
+      /* if we have an empty font name,      */
+      /* it must be the only font in the CFF */
+      if ( font->name_index.count > 1                          &&
+           font->name_index.data_size < font->name_index.count )
       {
         /* for pure CFFs, we still haven't checked enough bytes */
         /* to be sure that it is a CFF at all                   */

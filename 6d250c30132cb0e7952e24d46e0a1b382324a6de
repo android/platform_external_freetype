@@ -1,0 +1,27 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "152dce52_c88874ef",
+        "filename": "OWNERS",
+        "patchSetId": 1
+      },
+      "lineNbr": 2,
+      "author": {
+        "id": 1086749
+      },
+      "writtenOn": "2017-12-12T18:09:22Z",
+      "side": 1,
+      "message": "You should make this list larger in case two of you go on vacation. Add more people from your or jungshik\u0027s teams.",
+      "range": {
+        "startLine": 1,
+        "startChar": 0,
+        "endLine": 2,
+        "endChar": 18
+      },
+      "revId": "6d250c30132cb0e7952e24d46e0a1b382324a6de",
+      "serverId": "85c56323-6fa9-3386-8a01-6480fb634889",
+      "unresolved": false
+    }
+  ]
+}

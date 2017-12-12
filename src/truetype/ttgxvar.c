@@ -60,8 +60,11 @@
 
 #define FT_Stream_FTell( stream )                         \
           (FT_ULong)( (stream)->cursor - (stream)->base )
-#define FT_Stream_SeekSet( stream, off )                  \
-          ( (stream)->cursor = (stream)->base + (off) )
+#define FT_Stream_SeekSet( stream, off )                               \
+          (stream)->cursor =                                           \
+            ( (off) < (FT_ULong)( (stream)->limit - (stream)->base ) ) \
+                        ? (stream)->base + (off)                       \
+                        : (stream)->limit
 
 
   /*************************************************************************/
@@ -392,14 +395,14 @@
 
 
   /* some macros we need */
-  #define FT_FIXED_ONE  ( (FT_Fixed)0x10000 )
+#define FT_FIXED_ONE  ( (FT_Fixed)0x10000 )
 
-  #define FT_fdot14ToFixed( x )                \
-          ( (FT_Fixed)( (FT_ULong)(x) << 2 ) )
-  #define FT_intToFixed( i )                    \
-          ( (FT_Fixed)( (FT_ULong)(i) << 16 ) )
-  #define FT_fixedToInt( x )                                   \
-          ( (FT_Short)( ( (FT_UInt32)(x) + 0x8000U ) >> 16 ) )
+#define FT_fdot14ToFixed( x )                \
+        ( (FT_Fixed)( (FT_ULong)(x) << 2 ) )
+#define FT_intToFixed( i )                    \
+        ( (FT_Fixed)( (FT_ULong)(i) << 16 ) )
+#define FT_fixedToInt( x )                                   \
+        ( (FT_Short)( ( (FT_UInt32)(x) + 0x8000U ) >> 16 ) )
 
 
   static FT_Error
@@ -1007,16 +1010,15 @@
 
     if ( table->widthMap.innerIndex )
     {
-      if ( gindex >= table->widthMap.mapCount )
-      {
-        FT_TRACE2(( "gindex %d out of range\n", gindex ));
-        error = FT_THROW( Invalid_Argument );
-        goto Exit;
-      }
+      FT_UInt  idx = gindex;
+
+
+      if ( idx >= table->widthMap.mapCount )
+        idx = table->widthMap.mapCount - 1;
 
       /* trust that HVAR parser has checked indices */
-      outerIndex = table->widthMap.outerIndex[gindex];
-      innerIndex = table->widthMap.innerIndex[gindex];
+      outerIndex = table->widthMap.outerIndex[idx];
+      innerIndex = table->widthMap.innerIndex[idx];
     }
     else
     {
@@ -1954,6 +1956,7 @@
     GX_FVar_Head         fvar_head;
     FT_Bool              usePsName;
     FT_UInt              num_instances;
+    FT_UShort*           axis_flags;
 
     static const FT_Frame_Field  fvar_fields[] =
     {
@@ -2039,14 +2042,16 @@
       /* in fvar's table of named instances                       */
       num_instances = face->root.style_flags >> 16;
 
-      /* cannot overflow 32-bit arithmetic because of the size limits */
-      /* used in the `fvar' table validity check in `sfnt_init_face'  */
+      /* prepare storage area for MM data; this cannot overflow   */
+      /* 32-bit arithmetic because of the size limits used in the */
+      /* `fvar' table validity check in `sfnt_init_face'          */
       face->blend->mmvar_len =
         sizeof ( FT_MM_Var ) +
+        fvar_head.axisCount * sizeof ( FT_UShort ) +
         fvar_head.axisCount * sizeof ( FT_Var_Axis ) +
         num_instances * sizeof ( FT_Var_Named_Style ) +
         num_instances * fvar_head.axisCount * sizeof ( FT_Fixed ) +
-        5 * fvar_head.axisCount;
+        fvar_head.axisCount * 5;
 
       if ( FT_ALLOC( mmvar, face->blend->mmvar_len ) )
         goto Exit;
@@ -2063,8 +2068,12 @@
                                /* (or tuples, as called by Apple)         */
       mmvar->num_namedstyles =
         num_instances;
+
+      /* alas, no public field in `FT_Var_Axis' for axis flags */
+      axis_flags =
+        (FT_UShort*)&( mmvar[1] );
       mmvar->axis =
-        (FT_Var_Axis*)&( mmvar[1] );
+        (FT_Var_Axis*)&( axis_flags[fvar_head.axisCount] );
       mmvar->namedstyle =
         (FT_Var_Named_Style*)&( mmvar->axis[fvar_head.axisCount] );
 
@@ -2108,6 +2117,8 @@
         a->name[3] = (FT_String)( ( a->tag       ) & 0xFF );
         a->name[4] = '\0';
 
+        *axis_flags = axis_rec.flags;
+
         if ( a->minimum > a->def ||
              a->def > a->maximum )
         {
@@ -2119,13 +2130,17 @@
           a->maximum = a->def;
         }
 
-        FT_TRACE5(( "  \"%s\": minimum=%.5f, default=%.5f, maximum=%.5f\n",
+        FT_TRACE5(( "  \"%s\":"
+                    " minimum=%.5f, default=%.5f, maximum=%.5f,"
+                    " flags=0x%04X\n",
                     a->name,
                     a->minimum / 65536.0,
                     a->def / 65536.0,
-                    a->maximum / 65536.0 ));
+                    a->maximum / 65536.0,
+                    *axis_flags ));
 
         a++;
+        axis_flags++;
       }
 
       FT_TRACE5(( "\n" ));
@@ -2137,7 +2152,15 @@
         goto Exit;
 
       if ( fvar_head.instanceCount && !face->blend->avar_loaded )
+      {
+        FT_ULong  offset = FT_STREAM_POS();
+
+
         ft_var_load_avar( face );
+
+        if ( FT_STREAM_SEEK( offset ) )
+          goto Exit;
+      }
 
       ns  = mmvar->namedstyle;
       nsc = face->blend->normalized_stylecoords;
@@ -2155,8 +2178,11 @@
         for ( j = 0; j < fvar_head.axisCount; j++, c++ )
           *c = FT_GET_LONG();
 
+        /* valid psid values are 6, [256;32767], and 0xFFFF */
         if ( usePsName )
           ns->psid = FT_GET_USHORT();
+        else
+          ns->psid = 0xFFFF;
 
         ft_var_to_normalized( face,
                               fvar_head.axisCount,
@@ -2171,42 +2197,43 @@
       {
         SFNT_Service  sfnt = (SFNT_Service)face->sfnt;
 
-        FT_Int  found, win, apple;
+        FT_Int   found, dummy1, dummy2;
+        FT_UInt  strid = ~0U;
 
 
         /* the default instance is missing in array the   */
         /* of named instances; try to synthesize an entry */
         found = sfnt->get_name_id( face,
                                    TT_NAME_ID_TYPOGRAPHIC_SUBFAMILY,
-                                   &win,
-                                   &apple );
-        if ( !found )
+                                   &dummy1,
+                                   &dummy2 );
+        if ( found )
+          strid = TT_NAME_ID_TYPOGRAPHIC_SUBFAMILY;
+        else
+        {
           found = sfnt->get_name_id( face,
                                      TT_NAME_ID_FONT_SUBFAMILY,
-                                     &win,
-                                     &apple );
+                                     &dummy1,
+                                     &dummy2 );
+          if ( found )
+            strid = TT_NAME_ID_FONT_SUBFAMILY;
+        }
 
         if ( found )
         {
-          FT_Int  strid = win >= 0 ? win : apple;
-
-
           found = sfnt->get_name_id( face,
                                      TT_NAME_ID_PS_NAME,
-                                     &win,
-                                     &apple );
+                                     &dummy1,
+                                     &dummy2 );
           if ( found )
           {
-            FT_Int  psid = win >= 0 ? win : apple;
-
-
             FT_TRACE5(( "TT_Get_MM_Var:"
                         " Adding default instance to named instances\n" ));
 
             ns = &mmvar->namedstyle[fvar_head.instanceCount];
 
             ns->strid = strid;
-            ns->psid  = psid;
+            ns->psid  = TT_NAME_ID_PS_NAME;
 
             a = mmvar->axis;
             c = ns->coords;
@@ -2230,13 +2257,15 @@
         goto Exit;
       FT_MEM_COPY( mmvar, face->blend->mmvar, face->blend->mmvar_len );
 
+      axis_flags =
+        (FT_UShort*)&( mmvar[1] );
       mmvar->axis =
-        (FT_Var_Axis*)&( mmvar[1] );
+        (FT_Var_Axis*)&( axis_flags[mmvar->num_axis] );
       mmvar->namedstyle =
         (FT_Var_Named_Style*)&( mmvar->axis[mmvar->num_axis] );
+
       next_coords =
         (FT_Fixed*)&( mmvar->namedstyle[mmvar->num_namedstyles] );
-
       for ( n = 0; n < mmvar->num_namedstyles; n++ )
       {
         mmvar->namedstyle[n].coords  = next_coords;
@@ -2281,7 +2310,10 @@
     GX_Blend    blend;
     FT_MM_Var*  mmvar;
     FT_UInt     i, j;
-    FT_Bool     is_default_instance = 1;
+
+    FT_Bool     is_default_instance = TRUE;
+    FT_Bool     all_design_coords   = FALSE;
+
     FT_Memory   memory = face->root.memory;
 
     enum
@@ -2327,7 +2359,7 @@
       }
 
       if ( coords[i] != 0 )
-        is_default_instance = 0;
+        is_default_instance = FALSE;
     }
 
     FT_TRACE5(( "\n" ));
@@ -2340,6 +2372,9 @@
     {
       if ( FT_NEW_ARRAY( blend->coords, mmvar->num_axis ) )
         goto Exit;
+
+      /* the first time we have to compute all design coordinates */
+      all_design_coords = TRUE;
     }
 
     if ( !blend->normalizedcoords )
@@ -2388,7 +2423,7 @@
 
     if ( set_design_coords )
       ft_var_to_design( face,
-                        num_coords,
+                        all_design_coords ? blend->num_axis : num_coords,
                         blend->normalizedcoords,
                         blend->coords );
 
@@ -2444,6 +2479,10 @@
       face->root.face_index |= ( i + 1 ) << 16;
 
     face->is_default_instance = is_default_instance;
+
+    /* enforce recomputation of the PostScript name; */
+    FT_FREE( face->postscript_name );
+    face->postscript_name = NULL;
 
   Exit:
     return error;
@@ -2524,6 +2563,14 @@
     }
 
     blend = face->blend;
+
+    if ( !blend->coords )
+    {
+      /* select default instance coordinates */
+      /* if no instance is selected yet      */
+      if ( FT_SET_ERROR( tt_set_mm_blend( face, 0, NULL, 1 ) ) )
+        return error;
+    }
 
     nc = num_coords;
     if ( num_coords > blend->num_axis )
@@ -2622,7 +2669,7 @@
                  num_coords * sizeof ( FT_Fixed ) );
 
     a = mmvar->axis + num_coords;
-    c = coords + num_coords;
+    c = blend->coords + num_coords;
     for ( i = num_coords; i < mmvar->num_axis; i++, a++, c++ )
       *c = a->def;
 
@@ -2632,7 +2679,7 @@
     if ( !face->blend->avar_loaded )
       ft_var_load_avar( face );
 
-    ft_var_to_normalized( face, num_coords, coords, normalized );
+    ft_var_to_normalized( face, num_coords, blend->coords, normalized );
 
     error = tt_set_mm_blend( face, mmvar->num_axis, normalized, 0 );
 
@@ -2681,6 +2728,14 @@
     }
 
     blend = face->blend;
+
+    if ( !blend->coords )
+    {
+      /* select default instance coordinates */
+      /* if no instance is selected yet      */
+      if ( FT_SET_ERROR( tt_set_mm_blend( face, 0, NULL, 1 ) ) )
+        return error;
+    }
 
     nc = num_coords;
     if ( num_coords > blend->num_axis )
@@ -3077,25 +3132,12 @@
       d1   = out1 - in1;
       d2   = out2 - in2;
 
-      if ( out1 == out2 || in1 == in2 )
+      /* If the reference points have the same coordinate but different */
+      /* delta, inferred delta is zero.  Otherwise interpolate.         */
+      if ( in1 != in2 || out1 == out2 )
       {
-        for ( p = p1; p <= p2; p++ )
-        {
-          out = in_points[p].x;
-
-          if ( out <= in1 )
-            out += d1;
-          else if ( out >= in2 )
-            out += d2;
-          else
-            out = out1;
-
-          out_points[p].x = out;
-        }
-      }
-      else
-      {
-        FT_Fixed  scale = FT_DivFix( out2 - out1, in2 - in1 );
+        FT_Fixed  scale = in1 != in2 ? FT_DivFix( out2 - out1, in2 - in1 )
+                                     : 0;
 
 
         for ( p = p1; p <= p2; p++ )
@@ -3692,6 +3734,16 @@
         FT_FREE( blend->hvar_table );
       }
 
+      if ( blend->vvar_table )
+      {
+        ft_var_done_item_variation_store( face,
+                                          &blend->vvar_table->itemStore );
+
+        FT_FREE( blend->vvar_table->widthMap.innerIndex );
+        FT_FREE( blend->vvar_table->widthMap.outerIndex );
+        FT_FREE( blend->vvar_table );
+      }
+
       if ( blend->mvar_table )
       {
         ft_var_done_item_variation_store( face,
@@ -3707,7 +3759,12 @@
     }
   }
 
-#endif /* TT_CONFIG_OPTION_GX_VAR_SUPPORT */
+#else /* !TT_CONFIG_OPTION_GX_VAR_SUPPORT */
+
+  /* ANSI C doesn't like empty source files */
+  typedef int  _tt_gxvar_dummy;
+
+#endif /* !TT_CONFIG_OPTION_GX_VAR_SUPPORT */
 
 
 /* END */

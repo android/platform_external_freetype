@@ -579,34 +579,42 @@
     if ( vertical )
     {
       metrics->horiBearingX = FT_PIX_FLOOR( metrics->horiBearingX );
-      metrics->horiBearingY = FT_PIX_CEIL ( metrics->horiBearingY );
+      metrics->horiBearingY = FT_PIX_CEIL_LONG( metrics->horiBearingY );
 
-      right  = FT_PIX_CEIL( metrics->vertBearingX + metrics->width );
-      bottom = FT_PIX_CEIL( metrics->vertBearingY + metrics->height );
+      right  = FT_PIX_CEIL_LONG( ADD_LONG( metrics->vertBearingX,
+                                           metrics->width ) );
+      bottom = FT_PIX_CEIL_LONG( ADD_LONG( metrics->vertBearingY,
+                                           metrics->height ) );
 
       metrics->vertBearingX = FT_PIX_FLOOR( metrics->vertBearingX );
       metrics->vertBearingY = FT_PIX_FLOOR( metrics->vertBearingY );
 
-      metrics->width  = right - metrics->vertBearingX;
-      metrics->height = bottom - metrics->vertBearingY;
+      metrics->width  = SUB_LONG( right,
+                                  metrics->vertBearingX );
+      metrics->height = SUB_LONG( bottom,
+                                  metrics->vertBearingY );
     }
     else
     {
       metrics->vertBearingX = FT_PIX_FLOOR( metrics->vertBearingX );
       metrics->vertBearingY = FT_PIX_FLOOR( metrics->vertBearingY );
 
-      right  = FT_PIX_CEIL ( metrics->horiBearingX + metrics->width );
-      bottom = FT_PIX_FLOOR( metrics->horiBearingY - metrics->height );
+      right  = FT_PIX_CEIL_LONG( ADD_LONG( metrics->horiBearingX,
+                                           metrics->width ) );
+      bottom = FT_PIX_FLOOR( SUB_LONG( metrics->horiBearingY,
+                                       metrics->height ) );
 
       metrics->horiBearingX = FT_PIX_FLOOR( metrics->horiBearingX );
-      metrics->horiBearingY = FT_PIX_CEIL ( metrics->horiBearingY );
+      metrics->horiBearingY = FT_PIX_CEIL_LONG( metrics->horiBearingY );
 
-      metrics->width  = right - metrics->horiBearingX;
-      metrics->height = metrics->horiBearingY - bottom;
+      metrics->width  = SUB_LONG( right,
+                                  metrics->horiBearingX );
+      metrics->height = SUB_LONG( metrics->horiBearingY,
+                                  bottom );
     }
 
-    metrics->horiAdvance = FT_PIX_ROUND( metrics->horiAdvance );
-    metrics->vertAdvance = FT_PIX_ROUND( metrics->vertAdvance );
+    metrics->horiAdvance = FT_PIX_ROUND_LONG( metrics->horiAdvance );
+    metrics->vertAdvance = FT_PIX_ROUND_LONG( metrics->vertAdvance );
   }
 #endif /* GRID_FIT_METRICS */
 
@@ -702,7 +710,7 @@
         /* check the size of the `fpgm' and `prep' tables, too --    */
         /* the assumption is that there don't exist real TTFs where  */
         /* both `fpgm' and `prep' tables are missing                 */
-        if ( ( mode == FT_RENDER_MODE_LIGHT                   &&
+        if ( ( mode == FT_RENDER_MODE_LIGHT       &&
                !FT_DRIVER_HINTS_LIGHTLY( driver ) )             ||
              ( FT_IS_SFNT( face )                             &&
                ttface->num_locations                          &&
@@ -2404,7 +2412,7 @@
         if ( bsize->height < 0 || bsize->x_ppem < 0 || bsize->y_ppem < 0 )
         {
           FT_TRACE0(( "FT_Open_Face:"
-                      " Invalid bitmap dimensions for stroke %d,"
+                      " Invalid bitmap dimensions for strike %d,"
                       " now disabled\n", i ));
           bsize->width  = 0;
           bsize->height = 0;
@@ -2605,6 +2613,8 @@
     FT_Size          size = NULL;
     FT_ListNode      node = NULL;
 
+    FT_Size_Internal  internal = NULL;
+
 
     if ( !face )
       return FT_THROW( Invalid_Face_Handle );
@@ -2627,8 +2637,10 @@
 
     size->face = face;
 
-    /* for now, do not use any internal fields in size objects */
-    size->internal = NULL;
+    if ( FT_NEW( internal ) )
+      goto Exit;
+
+    size->internal = internal;
 
     if ( clazz->init_size )
       error = clazz->init_size( size );
@@ -3055,6 +3067,10 @@
     if ( !req || req->width < 0 || req->height < 0 ||
          req->type >= FT_SIZE_REQUEST_TYPE_MAX )
       return FT_THROW( Invalid_Argument );
+
+    /* signal the auto-hinter to recompute its size metrics */
+    /* (if requested)                                       */
+    face->size->internal->autohint_metrics.x_scale = 0;
 
     clazz = face->driver->clazz;
 
@@ -3709,12 +3725,14 @@
 
         if ( charcode > 0xFFFFFFFFUL )
         {
-          FT_TRACE1(( "FT_Get_Char_Index: too large charcode" ));
+          FT_TRACE1(( "FT_Face_GetCharVariantIndex:"
+                      " too large charcode" ));
           FT_TRACE1(( " 0x%x is truncated\n", charcode ));
         }
         if ( variantSelector > 0xFFFFFFFFUL )
         {
-          FT_TRACE1(( "FT_Get_Char_Index: too large variantSelector" ));
+          FT_TRACE1(( "FT_Face_GetCharVariantIndex:"
+                      " too large variantSelector" ));
           FT_TRACE1(( " 0x%x is truncated\n", variantSelector ));
         }
 
@@ -3750,12 +3768,14 @@
 
         if ( charcode > 0xFFFFFFFFUL )
         {
-          FT_TRACE1(( "FT_Get_Char_Index: too large charcode" ));
+          FT_TRACE1(( "FT_Face_GetCharVariantIsDefault:"
+                      " too large charcode" ));
           FT_TRACE1(( " 0x%x is truncated\n", charcode ));
         }
         if ( variantSelector > 0xFFFFFFFFUL )
         {
-          FT_TRACE1(( "FT_Get_Char_Index: too large variantSelector" ));
+          FT_TRACE1(( "FT_Face_GetCharVariantIsDefault:"
+                      " too large variantSelector" ));
           FT_TRACE1(( " 0x%x is truncated\n", variantSelector ));
         }
 
@@ -3818,7 +3838,7 @@
 
         if ( charcode > 0xFFFFFFFFUL )
         {
-          FT_TRACE1(( "FT_Get_Char_Index: too large charcode" ));
+          FT_TRACE1(( "FT_Face_GetVariantsOfChar: too large charcode" ));
           FT_TRACE1(( " 0x%x is truncated\n", charcode ));
         }
 
@@ -4537,7 +4557,7 @@
     if ( !clazz )
       return FT_THROW( Invalid_Argument );
 
-    /* check freetype version */
+    /* check FreeType version */
     if ( clazz->module_requires > FREETYPE_VER_FIXED )
       return FT_THROW( Invalid_Version );
 
@@ -4960,10 +4980,6 @@
     if ( error )
       goto Fail;
 #endif
-
-    /* we don't use raster_pool anymore. */
-    library->raster_pool_size = 0;
-    library->raster_pool      = NULL;
 
     library->version_major = FREETYPE_MAJOR;
     library->version_minor = FREETYPE_MINOR;

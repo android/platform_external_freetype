@@ -308,11 +308,13 @@
     }
     else
     {
-      SFNT_Service      sfnt    = (SFNT_Service)ttface->sfnt;
-      FT_Size_Metrics*  metrics = &size->metrics;
+      SFNT_Service      sfnt         = (SFNT_Service)ttface->sfnt;
+      FT_Size_Metrics*  size_metrics = &size->metrics;
 
 
-      error = sfnt->load_strike_metrics( ttface, strike_index, metrics );
+      error = sfnt->load_strike_metrics( ttface,
+                                         strike_index,
+                                         size_metrics );
       if ( error )
         ttsize->strike_index = 0xFFFFFFFFUL;
     }
@@ -354,15 +356,16 @@
 
     if ( FT_IS_SCALABLE( size->face ) )
     {
-      error                = tt_size_reset( ttsize, 0 );
-      ttsize->root.metrics = ttsize->metrics;
+      error = tt_size_reset( ttsize, 0 );
 
 #ifdef TT_USE_BYTECODE_INTERPRETER
       /* for the `MPS' bytecode instruction we need the point size */
+      if ( !error )
       {
-        FT_UInt  resolution = ttsize->metrics.x_ppem > ttsize->metrics.y_ppem
-                                ? req->horiResolution
-                                : req->vertResolution;
+        FT_UInt  resolution =
+                   ttsize->metrics->x_ppem > ttsize->metrics->y_ppem
+                     ? req->horiResolution
+                     : req->vertResolution;
 
 
         /* if we don't have a resolution value, assume 72dpi */
@@ -455,6 +458,11 @@
       if ( !FT_IS_TRICKY( face ) )
         load_flags |= FT_LOAD_NO_HINTING;
     }
+
+    /* use hinted metrics only if we load a glyph with hinting */
+    size->metrics = ( load_flags & FT_LOAD_NO_HINTING )
+                      ? &ttsize->metrics
+                      : &size->hinted_metrics;
 
     /* now load the glyph outline if necessary */
     error = TT_Load_Glyph( size, slot, glyph_index, load_flags );

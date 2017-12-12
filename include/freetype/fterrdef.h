@@ -231,6 +231,10 @@
                 "invalid PostScript (post) table format" )
   FT_ERRORDEF_( Invalid_Post_Table,                          0x9B,
                 "invalid PostScript (post) table" )
+  FT_ERRORDEF_( DEF_In_Glyf_Bytecode,                        0x9C,
+                "found FDEF or IDEF opcode in glyf bytecode" )
+  FT_ERRORDEF_( Missing_Bitmap,                              0x9D,
+                "missing bitmap in strike" )
 
   /* CFF, CID, and Type 1 errors */
 

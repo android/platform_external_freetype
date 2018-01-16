@@ -55,6 +55,8 @@ cc_library_shared {
         // the following is for testing only, and should not be used in final
         // builds of the product
         // "-DTT_CONFIG_OPTION_BYTECODE_INTERPRETER",
+
+        "-Wno-tautological-type-limit-compare",
     ],
 
     shared_libs: [

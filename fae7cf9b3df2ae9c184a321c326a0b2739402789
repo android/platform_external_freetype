@@ -93,6 +93,30 @@
       "revId": "fae7cf9b3df2ae9c184a321c326a0b2739402789",
       "serverId": "85c56323-6fa9-3386-8a01-6480fb634889",
       "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "0161fbd0_7f867392",
+        "filename": "README.version",
+        "patchSetId": 3
+      },
+      "lineNbr": 3,
+      "author": {
+        "id": 1062848
+      },
+      "writtenOn": "2018-02-06T18:20:35Z",
+      "side": 1,
+      "message": "Okay, let\u0027s move forward as is for now. Then remove if not used in future.",
+      "parentUuid": "3cd7da98_363b7e0e",
+      "range": {
+        "startLine": 3,
+        "startChar": 0,
+        "endLine": 3,
+        "endChar": 19
+      },
+      "revId": "fae7cf9b3df2ae9c184a321c326a0b2739402789",
+      "serverId": "85c56323-6fa9-3386-8a01-6480fb634889",
+      "unresolved": false
     }
   ]
 }

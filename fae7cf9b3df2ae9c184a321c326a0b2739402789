@@ -1,0 +1,50 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "0faa0d30_df6334e5",
+        "filename": "Android.bp",
+        "patchSetId": 3
+      },
+      "lineNbr": 57,
+      "author": {
+        "id": 1062848
+      },
+      "writtenOn": "2018-02-06T01:00:03Z",
+      "side": 1,
+      "message": "Please replace with spaces :)",
+      "range": {
+        "startLine": 56,
+        "startChar": 0,
+        "endLine": 57,
+        "endChar": 2
+      },
+      "revId": "fae7cf9b3df2ae9c184a321c326a0b2739402789",
+      "serverId": "85c56323-6fa9-3386-8a01-6480fb634889",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "c6625587_d3ca405e",
+        "filename": "README.version",
+        "patchSetId": 3
+      },
+      "lineNbr": 3,
+      "author": {
+        "id": 1062848
+      },
+      "writtenOn": "2018-02-06T01:00:03Z",
+      "side": 1,
+      "message": "What does this mean?",
+      "range": {
+        "startLine": 3,
+        "startChar": 0,
+        "endLine": 3,
+        "endChar": 19
+      },
+      "revId": "fae7cf9b3df2ae9c184a321c326a0b2739402789",
+      "serverId": "85c56323-6fa9-3386-8a01-6480fb634889",
+      "unresolved": false
+    }
+  ]
+}

@@ -25,6 +25,30 @@
     },
     {
       "key": {
+        "uuid": "0a601fd1_8428361c",
+        "filename": "Android.bp",
+        "patchSetId": 3
+      },
+      "lineNbr": 57,
+      "author": {
+        "id": 1106808
+      },
+      "writtenOn": "2018-02-06T01:10:41Z",
+      "side": 1,
+      "message": "Done, sorry.",
+      "parentUuid": "0faa0d30_df6334e5",
+      "range": {
+        "startLine": 56,
+        "startChar": 0,
+        "endLine": 57,
+        "endChar": 2
+      },
+      "revId": "fae7cf9b3df2ae9c184a321c326a0b2739402789",
+      "serverId": "85c56323-6fa9-3386-8a01-6480fb634889",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "c6625587_d3ca405e",
         "filename": "README.version",
         "patchSetId": 3
@@ -36,6 +60,30 @@
       "writtenOn": "2018-02-06T01:00:03Z",
       "side": 1,
       "message": "What does this mean?",
+      "range": {
+        "startLine": 3,
+        "startChar": 0,
+        "endLine": 3,
+        "endChar": 19
+      },
+      "revId": "fae7cf9b3df2ae9c184a321c326a0b2739402789",
+      "serverId": "85c56323-6fa9-3386-8a01-6480fb634889",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "3cd7da98_363b7e0e",
+        "filename": "README.version",
+        "patchSetId": 3
+      },
+      "lineNbr": 3,
+      "author": {
+        "id": 1106808
+      },
+      "writtenOn": "2018-02-06T01:10:41Z",
+      "side": 1,
+      "message": "I checked here: https://g3doc.corp.google.com/company/thirdparty/metadata.md?cl\u003dhead\nbut couldn\u0027t find a description",
+      "parentUuid": "c6625587_d3ca405e",
       "range": {
         "startLine": 3,
         "startChar": 0,

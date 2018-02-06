@@ -1,0 +1,8 @@
+Presubmit-Verified+1: Treehugger Robot <treehugger-gerrit@google.com>
+Code-Review+2: Seigo Nonaka <nona@google.com>
+Verified+1: Siyamed Sinir <siyamed@google.com>
+Submitted-by: Siyamed Sinir <siyamed@google.com>
+Submitted-at: Tue, 06 Feb 2018 18:21:36 +0000
+Reviewed-on: https://android-review.googlesource.com/606380
+Project: platform/external/freetype
+Branch: refs/heads/master

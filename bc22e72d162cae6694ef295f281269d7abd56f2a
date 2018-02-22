@@ -1,0 +1,9 @@
+Autosubmit+1: Philip P. Moltmann <moltmann@google.com>
+Code-Review+2: Siyamed Sinir <siyamed@google.com>
+Presubmit-Verified+1: Treehugger Robot <treehugger-gerrit@google.com>
+Verified+1: Philip P. Moltmann <moltmann@google.com>
+Submitted-by: Philip P. Moltmann <moltmann@google.com>
+Submitted-at: Thu, 22 Feb 2018 18:33:42 +0000
+Reviewed-on: https://android-review.googlesource.com/624241
+Project: platform/external/freetype
+Branch: refs/heads/master

@@ -1,0 +1,8 @@
+Code-Review+2: Siyamed Sinir <siyamed@google.com>
+Verified+1: Jerome Gaillard <jgaillard@google.com>
+Presubmit-Verified+1: Treehugger Robot <treehugger-gerrit@google.com>
+Submitted-by: Jerome Gaillard <jgaillard@google.com>
+Submitted-at: Mon, 22 Oct 2018 09:23:02 +0000
+Reviewed-on: https://android-review.googlesource.com/795892
+Project: platform/external/freetype
+Branch: refs/heads/master

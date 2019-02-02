@@ -88,7 +88,7 @@
    * messages during execution.
    */
 #undef  FT_COMPONENT
-#define FT_COMPONENT  trace_smooth
+#define FT_COMPONENT  smooth
 
 
 #ifdef STANDALONE_
@@ -222,10 +222,10 @@ typedef ptrdiff_t  FT_PtrDist;
 #endif
 
 #define FT_THROW( e )                               \
-          ( FT_Throw( FT_ERR_CAT( ErrRaster, e ),   \
+          ( FT_Throw( FT_ERR_CAT( ErrRaster_, e ),  \
                       __LINE__,                     \
                       __FILE__ )                  | \
-            FT_ERR_CAT( ErrRaster, e )            )
+            FT_ERR_CAT( ErrRaster_, e )           )
 
 #else /* !FT_DEBUG_LEVEL_TRACE */
 

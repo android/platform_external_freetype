@@ -54,6 +54,7 @@ cc_library_shared {
         "-Wno-unused-parameter",
         // Disabling some of modules results in warnings
         "-Wno-unused-variable",
+        "-Wno-unused-function",
         // the following is for testing only, and should not be used in final
         // builds of the product
         // "-DTT_CONFIG_OPTION_BYTECODE_INTERPRETER",

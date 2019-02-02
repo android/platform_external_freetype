@@ -9,10 +9,10 @@ third_party {
     type: GIT
     value: "git://git.sv.nongnu.org/freetype/freetype2.git"
   }
-  version: "96b5e500909cfce39ff78feabefd8063a229b951"
+  version: "f686ad46a3a9801ffa78063202250c68276330cb"
   last_upgrade_date {
-    year: 2018
-    month: 7
-    day: 27
+    year: 2019
+    month: 2
+    day: 1
   }
 }

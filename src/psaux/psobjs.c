@@ -36,7 +36,7 @@
    * messages during execution.
    */
 #undef  FT_COMPONENT
-#define FT_COMPONENT  trace_psobjs
+#define FT_COMPONENT  psobjs
 
 
   /*************************************************************************/
@@ -1447,6 +1447,8 @@
                                           bytes,
                                           max_bytes );
 
+    parser->cursor = cur;
+
     if ( delimiters )
     {
       if ( cur < parser->limit && *cur != '>' )
@@ -1456,10 +1458,8 @@
         goto Exit;
       }
 
-      cur++;
+      parser->cursor++;
     }
-
-    parser->cursor = cur;
 
   Exit:
     return error;
@@ -2041,6 +2041,14 @@
 
     first = outline->n_contours <= 1
             ? 0 : outline->contours[outline->n_contours - 2] + 1;
+
+    /* in malformed fonts it can happen that a contour was started */
+    /* but no points were added                                    */
+    if ( outline->n_contours && first == outline->n_points )
+    {
+      outline->n_contours--;
+      return;
+    }
 
     /* We must not include the last point in the path if it */
     /* is located on the first point.                       */

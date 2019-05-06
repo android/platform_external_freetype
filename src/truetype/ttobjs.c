@@ -4,7 +4,7 @@
  *
  *   Objects manager (body).
  *
- * Copyright 1996-2018 by
+ * Copyright (C) 1996-2019 by
  * David Turner, Robert Wilhelm, and Werner Lemberg.
  *
  * This file is part of the FreeType project, and may only be used,
@@ -43,7 +43,7 @@
    * messages during execution.
    */
 #undef  FT_COMPONENT
-#define FT_COMPONENT  trace_ttobjs
+#define FT_COMPONENT  ttobjs
 
 
 #ifdef TT_USE_BYTECODE_INTERPRETER
@@ -1174,10 +1174,16 @@
       TT_Face  face = (TT_Face)size->root.face;
 
 
-      /* Scale the cvt values to the new ppem.          */
-      /* We use by default the y ppem to scale the CVT. */
+      /* Scale the cvt values to the new ppem.            */
+      /* By default, we use the y ppem value for scaling. */
+      FT_TRACE6(( "CVT values:\n" ));
       for ( i = 0; i < size->cvt_size; i++ )
+      {
         size->cvt[i] = FT_MulFix( face->cvt[i], size->ttmetrics.scale );
+        FT_TRACE6(( "  %3d: %d (%f)\n",
+                    i, face->cvt[i], size->cvt[i] / 64.0 ));
+      }
+      FT_TRACE6(( "\n" ));
 
       /* all twilight points are originally zero */
       for ( i = 0; i < (FT_UInt)size->twilight.n_points; i++ )

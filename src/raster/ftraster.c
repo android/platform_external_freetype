@@ -4,7 +4,7 @@
  *
  *   The FreeType glyph rasterizer (body).
  *
- * Copyright 1996-2018 by
+ * Copyright (C) 1996-2019 by
  * David Turner, Robert Wilhelm, and Werner Lemberg.
  *
  * This file is part of the FreeType project, and may only be used,
@@ -99,7 +99,7 @@
    *   built from the bottom of the render pool, used as a stack.  The
    *   following graphics shows the profile list under construction:
    *
-   *     __________________________________________________________ _ _
+   *    __________________________________________________________ _ _
    *   |         |                 |         |                 |
    *   | profile | coordinates for | profile | coordinates for |-->
    *   |    1    |  profile 1      |    2    |  profile 2      |-->
@@ -125,8 +125,8 @@
    *
    *     _ _ _______________________________________
    *                           |                    |
-   *                         <--| sorted list of     |
-   *                         <--|  extrema scanlines |
+   *                        <--| sorted list of     |
+   *                        <--|  extrema scanlines |
    *     _ _ __________________|____________________|
    *
    *                           ^                    ^
@@ -169,7 +169,7 @@
    * messages during execution.
    */
 #undef  FT_COMPONENT
-#define FT_COMPONENT  trace_raster
+#define FT_COMPONENT  raster
 
 
 #ifdef STANDALONE_
@@ -914,16 +914,18 @@
 
 
     base[4].x = base[2].x;
-    b = base[1].x;
-    a = base[3].x = ( base[2].x + b ) / 2;
-    b = base[1].x = ( base[0].x + b ) / 2;
-    base[2].x = ( a + b ) / 2;
+    a = base[0].x + base[1].x;
+    b = base[1].x + base[2].x;
+    base[3].x = b >> 1;
+    base[2].x = ( a + b ) >> 2;
+    base[1].x = a >> 1;
 
     base[4].y = base[2].y;
-    b = base[1].y;
-    a = base[3].y = ( base[2].y + b ) / 2;
-    b = base[1].y = ( base[0].y + b ) / 2;
-    base[2].y = ( a + b ) / 2;
+    a = base[0].y + base[1].y;
+    b = base[1].y + base[2].y;
+    base[3].y = b >> 1;
+    base[2].y = ( a + b ) >> 2;
+    base[1].y = a >> 1;
 
     /* hand optimized.  gcc doesn't seem to be too good at common      */
     /* expression substitution and instruction scheduling ;-)          */
@@ -947,28 +949,32 @@
   static void
   Split_Cubic( TPoint*  base )
   {
-    Long  a, b, c, d;
+    Long  a, b, c;
 
 
     base[6].x = base[3].x;
-    c = base[1].x;
-    d = base[2].x;
-    base[1].x = a = ( base[0].x + c + 1 ) >> 1;
-    base[5].x = b = ( base[3].x + d + 1 ) >> 1;
-    c = ( c + d + 1 ) >> 1;
-    base[2].x = a = ( a + c + 1 ) >> 1;
-    base[4].x = b = ( b + c + 1 ) >> 1;
-    base[3].x = ( a + b + 1 ) >> 1;
+    a = base[0].x + base[1].x;
+    b = base[1].x + base[2].x;
+    c = base[2].x + base[3].x;
+    base[5].x = c >> 1;
+    c += b;
+    base[4].x = c >> 2;
+    base[1].x = a >> 1;
+    a += b;
+    base[2].x = a >> 2;
+    base[3].x = ( a + c ) >> 3;
 
     base[6].y = base[3].y;
-    c = base[1].y;
-    d = base[2].y;
-    base[1].y = a = ( base[0].y + c + 1 ) >> 1;
-    base[5].y = b = ( base[3].y + d + 1 ) >> 1;
-    c = ( c + d + 1 ) >> 1;
-    base[2].y = a = ( a + c + 1 ) >> 1;
-    base[4].y = b = ( b + c + 1 ) >> 1;
-    base[3].y = ( a + b + 1 ) >> 1;
+    a = base[0].y + base[1].y;
+    b = base[1].y + base[2].y;
+    c = base[2].y + base[3].y;
+    base[5].y = c >> 1;
+    c += b;
+    base[4].y = c >> 2;
+    base[1].y = a >> 1;
+    a += b;
+    base[2].y = a >> 2;
+    base[3].y = ( a + c ) >> 3;
   }
 
 
@@ -2246,13 +2252,18 @@
 
     /* Drop-out control */
 
-    e1 = TRUNC( CEILING( x1 ) );
+    e1 = CEILING( x1 );
+    e2 = FLOOR( x2 );
 
+    /* take care of the special case where both the left */
+    /* and right contour lie exactly on pixel centers    */
     if ( dropOutControl != 2                             &&
-         x2 - x1 - ras.precision <= ras.precision_jitter )
+         x2 - x1 - ras.precision <= ras.precision_jitter &&
+         e1 != x1 && e2 != x2                            )
       e2 = e1;
-    else
-      e2 = TRUNC( FLOOR( x2 ) );
+
+    e1 = TRUNC( e1 );
+    e2 = TRUNC( e2 );
 
     if ( e2 >= 0 && e1 < ras.bWidth )
     {
@@ -2766,6 +2777,12 @@
 
       Sort( &draw_left );
       Sort( &draw_right );
+
+      if ( !draw_right )
+      {
+        ras.error = FT_THROW( Invalid );
+        return FAILURE;
+      }
 
       y_change = (Short)ras.sizeBuff[-ras.numTurns--];
       y_height = (Short)( y_change - y );

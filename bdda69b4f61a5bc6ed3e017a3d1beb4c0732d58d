@@ -1,0 +1,21 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "6ba578bc_8c4b2252",
+        "filename": "/COMMIT_MSG",
+        "patchSetId": 1
+      },
+      "lineNbr": 8,
+      "author": {
+        "id": 1062848
+      },
+      "writtenOn": "2020-01-14T01:41:14Z",
+      "side": 1,
+      "message": "Please leave BUG line for future reference.\nAlso, please leave TEST line for checking when we change freetype in future.",
+      "revId": "bdda69b4f61a5bc6ed3e017a3d1beb4c0732d58d",
+      "serverId": "85c56323-6fa9-3386-8a01-6480fb634889",
+      "unresolved": true
+    }
+  ]
+}

@@ -1,0 +1,8 @@
+Code-Review+2: Elliott Hughes <enh@google.com>
+Presubmit-Verified+1: Treehugger Robot <treehugger-gerrit@google.com>
+Autosubmit+1: Haibo Huang <hhb@google.com>
+Submitted-by: Haibo Huang <hhb@google.com>
+Submitted-at: Mon, 11 May 2020 22:12:43 +0000
+Reviewed-on: https://android-review.googlesource.com/c/platform/external/freetype/+/1306457
+Project: platform/external/freetype
+Branch: refs/heads/master

@@ -16,6 +16,23 @@
       "message": "PTAL",
       "revId": "48987cbbbdeeaecf1205e6cbfbd3b2e06fa79aa1",
       "serverId": "85c56323-6fa9-3386-8a01-6480fb634889"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "82f88147_c1c6d432",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 1
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1106808
+      },
+      "writtenOn": "2020-10-22T15:20:14Z",
+      "side": 1,
+      "message": "can you please check if readme/version files are updated and points to the right commit sha?",
+      "revId": "48987cbbbdeeaecf1205e6cbfbd3b2e06fa79aa1",
+      "serverId": "85c56323-6fa9-3386-8a01-6480fb634889"
     }
   ]
 }

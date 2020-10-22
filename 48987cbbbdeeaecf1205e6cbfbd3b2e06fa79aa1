@@ -33,6 +33,24 @@
       "message": "can you please check if readme/version files are updated and points to the right commit sha?",
       "revId": "48987cbbbdeeaecf1205e6cbfbd3b2e06fa79aa1",
       "serverId": "85c56323-6fa9-3386-8a01-6480fb634889"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "bd4887f1_5fdd4310",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 1
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1062848
+      },
+      "writtenOn": "2020-10-22T19:50:57Z",
+      "side": 1,
+      "message": "The README.android contains a hashcode but that is just an example. I don\u0027t think we need to update it.\nWe used to update README.version but it is now gone. So I don\u0027t think we need to update sha anything in the file.\nhttps://android-review.googlesource.com/c/platform/external/freetype/+/1106516",
+      "parentUuid": "82f88147_c1c6d432",
+      "revId": "48987cbbbdeeaecf1205e6cbfbd3b2e06fa79aa1",
+      "serverId": "85c56323-6fa9-3386-8a01-6480fb634889"
     }
   ]
 }

@@ -1,0 +1,8 @@
+Lint+1: Lint 🤖 <ayeaye-gerrit@google.com>
+Code-Review+2: Jerome Gaillard <jgaillard@google.com>
+Presubmit-Verified+1: Treehugger Robot <treehugger-gerrit@google.com>
+Submitted-by: Colin Cross <ccross@android.com>
+Submitted-at: Fri, 23 Oct 2020 18:09:38 +0000
+Reviewed-on: https://android-review.googlesource.com/c/platform/external/freetype/+/1466552
+Project: platform/external/freetype
+Branch: refs/heads/master

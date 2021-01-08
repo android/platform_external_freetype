@@ -1,0 +1,9 @@
+Presubmit-Verified+2: Treehugger Robot <treehugger-gerrit@google.com>
+Lint+1: Lint 🤖 <ayeaye-gerrit@google.com>
+Code-Review+2: Colin Cross <ccross@android.com>
+Code-Review+2: Seigo Nonaka <nona@google.com>
+Submitted-by: Treehugger Robot <treehugger-gerrit@google.com>
+Submitted-at: Fri, 08 Jan 2021 00:57:34 +0000
+Reviewed-on: https://android-review.googlesource.com/c/platform/external/freetype/+/1540946
+Project: platform/external/freetype
+Branch: refs/heads/master

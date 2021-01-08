@@ -16,6 +16,23 @@
       "message": "I included this CL to a topic with the soong change.",
       "revId": "944e9ce95ac82610c5b35392ec781f887462d33b",
       "serverId": "85c56323-6fa9-3386-8a01-6480fb634889"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "9844d4db_3dbc6446",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 2
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1062848
+      },
+      "writtenOn": "2021-01-08T00:52:21Z",
+      "side": 1,
+      "message": "owner lgtm",
+      "revId": "944e9ce95ac82610c5b35392ec781f887462d33b",
+      "serverId": "85c56323-6fa9-3386-8a01-6480fb634889"
     }
   ]
 }

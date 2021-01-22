@@ -1,3 +1,14 @@
+package {
+    default_applicable_licenses: ["external_freetype_license"],
+}
+
+license {
+    name: "external_freetype_license",
+    visibility: [":__subpackages__"],
+    license_kinds: ["SPDX-license-identifier-BSD","SPDX-license-identifier-FTL","SPDX-license-identifier-GPL","SPDX-license-identifier-GPL-2.0","SPDX-license-identifier-GPL-3.0","SPDX-license-identifier-LGPL","SPDX-license-identifier-MIT","SPDX-license-identifier-Zlib","legacy_unencumbered"],
+    license_text: ["NOTICE"],
+}
+
 cc_defaults {
     name: "libft2_defaults",
     host_supported: true,

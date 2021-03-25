@@ -16,6 +16,24 @@
       "message": "Steve: from your description it sounds like you just need host_available: true? Can you figure out why vendor_available and product_available are required if your component is host?",
       "revId": "c3fb10e8ecf379c688ca4fcbc8686b7476489a1c",
       "serverId": "85c56323-6fa9-3386-8a01-6480fb634889"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "030f592f_3fdcd57b",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 3
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1649564
+      },
+      "writtenOn": "2021-03-25T17:15:52Z",
+      "side": 1,
+      "message": "Thank you! product_available is not needed. I copied them from webRTC/VNC. Vendor_available seems to be required by webRTC and vnc as they are intended to run in the guest. Updated the patchset. Thank you!",
+      "parentUuid": "19d8f3da_ede9ea64",
+      "revId": "c3fb10e8ecf379c688ca4fcbc8686b7476489a1c",
+      "serverId": "85c56323-6fa9-3386-8a01-6480fb634889"
     }
   ]
 }

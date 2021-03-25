@@ -1,0 +1,21 @@
+{
+  "comments": [
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "19d8f3da_ede9ea64",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 3
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1293738
+      },
+      "writtenOn": "2021-03-25T16:50:57Z",
+      "side": 1,
+      "message": "Steve: from your description it sounds like you just need host_available: true? Can you figure out why vendor_available and product_available are required if your component is host?",
+      "revId": "c3fb10e8ecf379c688ca4fcbc8686b7476489a1c",
+      "serverId": "85c56323-6fa9-3386-8a01-6480fb634889"
+    }
+  ]
+}
